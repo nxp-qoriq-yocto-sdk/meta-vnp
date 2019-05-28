@@ -1,0 +1,36 @@
+#!/bin/sh
+### BEGIN INIT INFO
+# Provides: cmm
+# Short-Description: CMM
+### END INIT INFO
+
+DAEMON=/usr/bin/cmm
+NAME=cmm
+ARGS="-f /etc/config/fastforward"
+
+case "$1" in
+    start)
+        echo -n "* starting $NAME ... "
+        start-stop-daemon -S -b -x $DAEMON -- $ARGS
+        echo "done."
+        ;;
+    stop)
+        echo -n "* stopping $NAME ... "
+        pid=`pidof -x $DAEMON`
+        [ -n "$pid" ] && kill $pid
+        echo "done."
+        ;;
+    restart)
+        echo "* restarting $NAME ... "
+        $0 stop
+        $0 start
+        echo "done."
+        ;;
+    *)
+        echo "Usage: $0 {start|stop|restart}"
+        exit 1
+        ;;
+esac
+
+exit 0
+

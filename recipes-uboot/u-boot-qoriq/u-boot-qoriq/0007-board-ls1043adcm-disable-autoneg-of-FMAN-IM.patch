@@ -1,0 +1,33 @@
+From fbc5b5d9508d1fcf8fded1371d036fe587f6b9d7 Mon Sep 17 00:00:00 2001
+From: Prabhakar Kushwaha <prabhakar.kushwaha@nxp.com>
+Date: Mon, 22 Jan 2018 09:29:22 +0530
+Subject: [PATCH 07/31] board: ls1043adcm: disable autoneg of FMAN IM
+
+Due to some issue in switch autoneg is not working.
+So temoprarily disable auto neg in FMAN IM driver
+
+Signed-off-by: Prabhakar Kushwaha <prabhakar.kushwaha@nxp.com>
+---
+ drivers/net/fm/eth.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/drivers/net/fm/eth.c b/drivers/net/fm/eth.c
+index bf5f89b61a..d719afacad 100644
+--- a/drivers/net/fm/eth.c
++++ b/drivers/net/fm/eth.c
+@@ -78,6 +78,12 @@ qsgmii_loop:
+ 	value = PHY_SGMII_CR_DEF_VAL | PHY_SGMII_CR_RESET_AN;
+ 	memac_mdio_write(&bus, i, MDIO_DEVAD_NONE, 0, value);
+ 
++#ifdef CONFIG_TARGET_LS1043ADCM
++	mdelay(50);
++	memac_mdio_write(&bus, i, MDIO_DEVAD_NONE, 0, 0x8000);
++	memac_mdio_write(&bus, i, MDIO_DEVAD_NONE, 0x14, 0x8);
++	memac_mdio_write(&bus, i, MDIO_DEVAD_NONE, 0, 0x8140);
++#endif
+ 	if ((priv->enet_if == PHY_INTERFACE_MODE_QSGMII) && (i < 3)) {
+ 		i++;
+ 		goto qsgmii_loop;
+-- 
+2.17.1
+

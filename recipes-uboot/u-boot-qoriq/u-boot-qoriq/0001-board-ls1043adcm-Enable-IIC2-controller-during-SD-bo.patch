@@ -1,0 +1,43 @@
+From 0c53210d498949290cd0225be20b3859b68df37d Mon Sep 17 00:00:00 2001
+From: Prabhakar Kushwaha <prabhakar.kushwaha@nxp.com>
+Date: Wed, 2 May 2018 16:37:54 +0530
+Subject: [PATCH 01/31] board: ls1043adcm: Enable IIC2 controller during SD
+ boot
+
+SDHC WP/CD signals are muxed with IIC2 signals. They are enabled
+by defualt during SD boot.
+
+It is known errata (A-010539). This patch add workaround for this.
+
+Signed-off-by: Prabhakar Kushwaha <prabhakar.kushwaha@nxp.com>
+---
+ board/freescale/ls1043ardb/ls1043ardb.c | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
+
+diff --git a/board/freescale/ls1043ardb/ls1043ardb.c b/board/freescale/ls1043ardb/ls1043ardb.c
+index 9dc1cbc343..96b72fb1b5 100644
+--- a/board/freescale/ls1043ardb/ls1043ardb.c
++++ b/board/freescale/ls1043ardb/ls1043ardb.c
+@@ -145,7 +145,19 @@ int config_board_mux(void)
+ #if defined(CONFIG_MISC_INIT_R)
+ int misc_init_r(void)
+ {
++#ifdef CONFIG_TARGET_LS1043ADCM
++	struct ccsr_gur __iomem *gur = (void *)(CONFIG_SYS_FSL_GUTS_ADDR);
++	u32 porsr1;
++#endif
+ 	config_board_mux();
++
++#ifdef CONFIG_TARGET_LS1043ADCM
++	/* A-010539: */
++	porsr1 = in_be32(&gur->porsr1);
++	porsr1 &= ~FSL_CHASSIS2_CCSR_PORSR1_RCW_MASK;
++	out_be32((void *)(CONFIG_SYS_DCSR_DCFG_ADDR + DCFG_DCSR_PORCR1),
++		 porsr1);
++#endif
+ 	return 0;
+ }
+ #endif
+-- 
+2.17.1
+

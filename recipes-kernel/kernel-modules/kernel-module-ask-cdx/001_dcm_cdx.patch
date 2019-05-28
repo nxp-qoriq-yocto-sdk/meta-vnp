@@ -1,0 +1,93 @@
+--- cdx-org/devman.c	2019-01-24 17:04:52.828173471 +0530
++++ cdx-patched/devman.c	2019-01-24 17:03:10.580176963 +0530
+@@ -370,6 +370,8 @@
+ 			macdev = priv->mac_dev;
+ 			if (macdev) {
+ 				p_LnxWrpFmDev = (t_LnxWrpFmDev*)macdev->fm;
++                                printk(" %s:%d, device name %s, fm_idx %d == p_LnxWrpFmDev->id %d, port_idx %d == macdev->cell_index %d \n",
++                                        __FUNCTION__,__LINE__,device->name,fm_idx,p_LnxWrpFmDev->id,port_idx,macdev->cell_index);
+ 				if (speed == 10) {
+ 					//10 gig interfaces upports only SUPPORTED_10000baseT_Full
+ 					/*DGW board has 2 fixed-link interfaces 
+@@ -378,13 +380,27 @@
+ 					connected to 10G link of the board.
+ 					sgmii - considered as 1000baseT_Full and this has cell_index = 0*/
+ 
+-					if ( (!macdev->fixed_link) && (macdev->if_support != SUPPORTED_10000baseT_Full) )
++					//if ( (!macdev->fixed_link) && (macdev->if_support != SUPPORTED_10000baseT_Full) )
++                                        if(port_idx != macdev->cell_index)
+ 						goto next_device; 
+ 				}
+-				if ((fm_idx == p_LnxWrpFmDev->id) && 
+-					(port_idx == macdev->cell_index))
+-					return device;
++				//if ((fm_idx == p_LnxWrpFmDev->id) && 
++				//	(port_idx == macdev->cell_index))
++				//	return device;
++                                if (fm_idx == p_LnxWrpFmDev->id) {
++                                    if (port_idx == 6)
++                                    {
++                                          port_idx = 0;
++                                    }
++                                    if(port_idx == macdev->cell_index)
++                                    {
++                                        return device;
++                                    }
++                                }
+ 			}
++                        else
++                            printk(" %s:%d, macdev is not present \n",__FUNCTION__,__LINE__);
++
+ 		}
+ next_device:
+ 		device = next_net_device(device);
+--- cdx-org/dpa_cfg.c	2019-01-24 17:04:52.828173471 +0530
++++ cdx-patched/dpa_cfg.c	2019-01-24 17:03:10.576176963 +0530
+@@ -305,17 +305,17 @@
+ //allocate and copy port releated info from uspace 
+ static int get_port_info(struct cdx_fman_info *finfo) 
+ {	
+-	struct cdx_port_info *port_info;
++	struct cdx_port_info *port_info, *port_tmp;
+ 	void *uspace_info;
+ 	uint32_t mem_size;
+ 	uint32_t ii;
+ 	
+ 	//allocate port information area
+ 	mem_size = (sizeof(struct cdx_port_info) * finfo->max_ports);
+-#ifdef DPA_CFG_DEBUG
+-	DPA_INFO("%s::fm %d num ports %d\n", __FUNCTION__, 
++//#ifdef DPA_CFG_DEBUG
++	printk(" %s::fm %d num ports %d\n", __FUNCTION__, 
+ 			finfo->index, finfo->max_ports);
+-#endif
++//#endif
+ 	port_info = kzalloc(mem_size, 0); 
+ 	if (!port_info) {
+                 DPA_ERROR("%s::memalloc for port_info failed\n",
+@@ -330,6 +330,17 @@
+                         __FUNCTION__);
+ 		return -EIO;
+         }
++
++        printk(" %s:%d, Available FMAN ports \n",__FUNCTION__,__LINE__);
++        port_tmp = port_info;
++	for (ii = 0; ii < finfo->max_ports; ii++) {
++		printk(" %s:port %s, fmindex %d, port index %d, port id %d\n",
++			__FUNCTION__,port_tmp->name,
++			port_tmp->fm_index,
++			port_tmp->index,
++			port_tmp->portid);
++		port_tmp++;
++        }
+ 	//put the linux name for the port
+ 	for (ii = 0; ii < finfo->max_ports; ii++) {
+ 		struct net_device *dev;
+@@ -342,6 +353,7 @@
+                         		__FUNCTION__, port_info->name);
+ 				return -EIO;
+ 			} else {
++                                printk(" %s:%d, mapped port port_info->name %s, dev->name %s \n",__FUNCTION__,__LINE__,port_info->name,dev->name);
+ 				strcpy(port_info->name, dev->name);
+ 			}
+ 		}

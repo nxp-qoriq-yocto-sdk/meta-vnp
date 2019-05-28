@@ -1,0 +1,89 @@
+From 4d716fe16a64fbc81fb88771591e63e054fc0ba8 Mon Sep 17 00:00:00 2001
+From: Rajesh Bhagat <rajesh.bhagat@nxp.com>
+Date: Wed, 17 Jan 2018 12:27:06 +0530
+Subject: [PATCH 05/31] ls1043a: dcm: fixed link PHY support
+
+Enables fixed link PHY support and adds Serdes protocol
+as 0x3333.
+
+NOTE: currently using 0x333, will be changed later.
+
+Signed-off-by: Prabhakar Kushwaha <prabhakar.kushwaha@nxp.com>
+Signed-off-by: Rajesh Bhagat <rajesh.bhagat@nxp.com>
+---
+ board/freescale/ls1043ardb/eth.c | 7 +++++++
+ drivers/net/phy/fixed.c          | 5 +++++
+ include/configs/ls1043adcm.h     | 1 +
+ 3 files changed, 13 insertions(+)
+
+diff --git a/board/freescale/ls1043ardb/eth.c b/board/freescale/ls1043ardb/eth.c
+index 61f2b5d447..4b85c5cadd 100644
+--- a/board/freescale/ls1043ardb/eth.c
++++ b/board/freescale/ls1043ardb/eth.c
+@@ -46,13 +46,18 @@ int board_eth_init(bd_t *bis)
+ 	fm_info_set_phy_address(FM1_DTSEC3, RGMII_PHY1_ADDR);
+ 	fm_info_set_phy_address(FM1_DTSEC4, RGMII_PHY2_ADDR);
+ 
++#ifndef CONFIG_TARGET_LS1043ADCM
+ 	/* QSGMII on lane B, MAC 1/2/5/6 */
+ 	fm_info_set_phy_address(FM1_DTSEC1, QSGMII_PORT1_PHY_ADDR);
+ 	fm_info_set_phy_address(FM1_DTSEC2, QSGMII_PORT2_PHY_ADDR);
+ 	fm_info_set_phy_address(FM1_DTSEC5, QSGMII_PORT3_PHY_ADDR);
+ 	fm_info_set_phy_address(FM1_DTSEC6, QSGMII_PORT4_PHY_ADDR);
++#endif
+ 
+ 	switch (srds_s1) {
++#ifdef CONFIG_TARGET_LS1043ADCM
++	case 0x3333:
++#endif
+ 	case 0x1455:
+ 		break;
+ 	default:
+@@ -65,10 +70,12 @@ int board_eth_init(bd_t *bis)
+ 	for (i = FM1_DTSEC1; i < FM1_DTSEC1 + CONFIG_SYS_NUM_FM1_DTSEC; i++)
+ 		fm_info_set_mdio(i, dev);
+ 
++#ifndef CONFIG_TARGET_LS1043ADCM
+ 	/* XFI on lane A, MAC 9 */
+ 	fm_info_set_phy_address(FM1_10GEC1, FM1_10GEC1_PHY_ADDR);
+ 	dev = miiphy_get_dev_by_name(DEFAULT_FM_TGEC_MDIO_NAME);
+ 	fm_info_set_mdio(FM1_10GEC1, dev);
++#endif
+ 
+ 	cpu_eth_init(bis);
+ #endif
+diff --git a/drivers/net/phy/fixed.c b/drivers/net/phy/fixed.c
+index e8e9099cb5..9967257f18 100644
+--- a/drivers/net/phy/fixed.c
++++ b/drivers/net/phy/fixed.c
+@@ -35,10 +35,15 @@ int fixedphy_probe(struct phy_device *phydev)
+ 
+ 	phydev->priv = priv;
+ 
++#ifdef CONFIG_TARGET_LS1043ADCM
++	priv->link_speed = SPEED_1000;
++	priv->duplex = DUPLEX_FULL;
++#else
+ 	priv->link_speed = val;
+ 	priv->duplex = fdtdec_get_bool(gd->fdt_blob, ofnode, "full-duplex");
+ 	priv->pause = fdtdec_get_bool(gd->fdt_blob, ofnode, "pause");
+ 	priv->asym_pause = fdtdec_get_bool(gd->fdt_blob, ofnode, "asym-pause");
++#endif
+ 
+ 	/* fixed-link phy must not be reset by core phy code */
+ 	phydev->flags |= PHY_FLAG_BROKEN_RESET;
+diff --git a/include/configs/ls1043adcm.h b/include/configs/ls1043adcm.h
+index 65c7f5c120..40e7a0246e 100644
+--- a/include/configs/ls1043adcm.h
++++ b/include/configs/ls1043adcm.h
+@@ -275,6 +275,7 @@
+ 
+ #ifdef CONFIG_SYS_DPAA_FMAN
+ #define CONFIG_FMAN_ENET
++#define CONFIG_PHY_FIXED
+ #define CONFIG_PHYLIB_10G
+ #define CONFIG_PHY_AQUANTIA
+ 
+-- 
+2.17.1
+

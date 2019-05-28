@@ -1,0 +1,60 @@
+From 6f37f8160583a181e86967ba0027fd8523decab9 Mon Sep 17 00:00:00 2001
+From: Prabhakar Kushwaha <prabhakar.kushwaha@nxp.com>
+Date: Mon, 30 Apr 2018 13:58:52 +0530
+Subject: [PATCH 14/31] Enable RGMII
+
+temporary workaround for enabling RGMII
+
+Signed-off-by: Prabhakar Kushwaha <prabhakar.kushwaha@nxp.com>
+---
+ board/freescale/ls1043ardb/eth.c | 4 +++-
+ drivers/net/fm/eth.c             | 4 ++++
+ 2 files changed, 7 insertions(+), 1 deletion(-)
+
+diff --git a/board/freescale/ls1043ardb/eth.c b/board/freescale/ls1043ardb/eth.c
+index 603638089d..7f210ee529 100644
+--- a/board/freescale/ls1043ardb/eth.c
++++ b/board/freescale/ls1043ardb/eth.c
+@@ -42,11 +42,11 @@ int board_eth_init(bd_t *bis)
+ 	/* Register the 10G MDIO bus */
+ 	fm_memac_mdio_init(bis, &tgec_mdio_info);
+ 
++#ifndef CONFIG_TARGET_LS1043ADCM
+ 	/* Set the two on-board RGMII PHY address */
+ 	fm_info_set_phy_address(FM1_DTSEC3, RGMII_PHY1_ADDR);
+ 	fm_info_set_phy_address(FM1_DTSEC4, RGMII_PHY2_ADDR);
+ 
+-#ifndef CONFIG_TARGET_LS1043ADCM
+ 	/* QSGMII on lane B, MAC 1/2/5/6 */
+ 	fm_info_set_phy_address(FM1_DTSEC1, QSGMII_PORT1_PHY_ADDR);
+ 	fm_info_set_phy_address(FM1_DTSEC2, QSGMII_PORT2_PHY_ADDR);
+@@ -66,9 +66,11 @@ int board_eth_init(bd_t *bis)
+ 		break;
+ 	}
+ 
++#ifndef CONFIG_TARGET_LS1043ADCM
+ 	dev = miiphy_get_dev_by_name(DEFAULT_FM_MDIO_NAME);
+ 	for (i = FM1_DTSEC1; i < FM1_DTSEC1 + CONFIG_SYS_NUM_FM1_DTSEC; i++)
+ 		fm_info_set_mdio(i, dev);
++#endif
+ 
+ #ifndef CONFIG_TARGET_LS1043ADCM
+ 	/* XFI on lane A, MAC 9 */
+diff --git a/drivers/net/fm/eth.c b/drivers/net/fm/eth.c
+index 6613720c21..6bd6c43232 100644
+--- a/drivers/net/fm/eth.c
++++ b/drivers/net/fm/eth.c
+@@ -478,6 +478,10 @@ static int fm_eth_open(struct eth_device *dev, bd_t *bd)
+ 			return ret;
+ 		}
+ 	} else {
++		fm_eth->phydev->speed = SPEED_1000;
++		fm_eth->phydev->link = 1;
++		fm_eth->phydev->duplex = DUPLEX_FULL;
++		mac->set_if_mode(mac, fm_eth->enet_if, fm_eth->phydev->speed);
+ 		return 0;
+ 	}
+ #else
+-- 
+2.17.1
+

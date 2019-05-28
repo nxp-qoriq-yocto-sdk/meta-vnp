@@ -1,0 +1,35 @@
+From a80789469b3b812d0faf7f1f7809faf51c72383e Mon Sep 17 00:00:00 2001
+From: Pankit Garg <pankit.garg@nxp.com>
+Date: Fri, 2 Nov 2018 10:55:00 +0530
+Subject: [PATCH 15/31] armv8: ls1043adcm: Enable USB support
+
+Adds support of USB for LS1043ADCM board.
+
+Signed-off-by: Pankit Garg <pankit.garg@nxp.com>
+---
+ include/configs/ls1043adcm.h | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+diff --git a/include/configs/ls1043adcm.h b/include/configs/ls1043adcm.h
+index a0e8f92fa7..86c9858b48 100644
+--- a/include/configs/ls1043adcm.h
++++ b/include/configs/ls1043adcm.h
+@@ -304,6 +304,15 @@
+ #endif
+ #endif
+ 
++/* USB */
++#ifndef SPL_NO_USB
++#define CONFIG_HAS_FSL_XHCI_USB
++#ifdef CONFIG_HAS_FSL_XHCI_USB
++#define CONFIG_USB_XHCI_FSL
++#define CONFIG_USB_MAX_CONTROLLER_COUNT         2
++#endif
++#endif
++
+ /* SATA */
+ #ifndef SPL_NO_SATA
+ #define CONFIG_LIBATA
+-- 
+2.17.1
+

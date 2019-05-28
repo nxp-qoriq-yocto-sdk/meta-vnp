@@ -1,0 +1,12 @@
+diff -Naur cdx-org/control_qm.c cdx/control_qm.c
+--- cdx-org/control_qm.c	2019-01-22 12:15:30.951230335 +0530
++++ cdx/control_qm.c	2019-01-22 12:15:49.835230333 +0530
+@@ -166,7 +166,7 @@
+   
+   if(pLNICtxt)
+   {
+-    if(pLNICtxt->pChannels[0]->pQueues[queue_no])
++    if((queue_no <= 0xf) && (pLNICtxt->pChannels[0]->pQueues[queue_no]))
+        return (&(pLNICtxt->pChannels[0]->pQueues[queue_no]->fq->recycle_fq));
+     else
+     {

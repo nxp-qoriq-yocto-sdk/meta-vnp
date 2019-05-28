@@ -1,0 +1,91 @@
+From b5a7dc6c8d04209c5b351c4fb07f0d793e050843 Mon Sep 17 00:00:00 2001
+From: Prabhakar Kushwaha <prabhakar.kushwaha@nxp.com>
+Date: Tue, 30 Jan 2018 10:21:42 +0530
+Subject: [PATCH 04/16] ls1043adcm: disable autoneg of FMAN IM
+
+Due to some issue in switch autoneg is not working.
+So temoprarily disable auto neg in FMAN IM driver
+
+Signed-off-by: Vladimir Oltean <vladimir.oltean@nxp.com>
+Signed-off-by: Prabhakar Kushwaha <prabhakar.kushwaha@nxp.com>
+Signed-off-by: Calvin Johnson <calvin.johnson@nxp.com>
+---
+ .../boot/dts/freescale/fsl-ls1043a-rdb.dts    | 28 +++++++++----------
+ .../sdk_fman/Peripherals/FM/MAC/memac.c       |  4 +--
+ 2 files changed, 16 insertions(+), 16 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/freescale/fsl-ls1043a-rdb.dts b/arch/arm64/boot/dts/freescale/fsl-ls1043a-rdb.dts
+index bf4b124617df..19b9b81ba388 100644
+--- a/arch/arm64/boot/dts/freescale/fsl-ls1043a-rdb.dts
++++ b/arch/arm64/boot/dts/freescale/fsl-ls1043a-rdb.dts
+@@ -195,38 +195,38 @@
+ 
+ &fman0 {
+ 	ethernet@e0000 {
+-		phy-handle = <&qsgmii_phy1>;
+-		phy-connection-type = "qsgmii";
++                fixed-link = <1 1 1000 0 0>;
++                phy-connection-type = "sgmii";
+ 	};
+ 
+ 	ethernet@e2000 {
+-		phy-handle = <&qsgmii_phy2>;
+-		phy-connection-type = "qsgmii";
++                fixed-link = <1 1 1000 0 0>;
++                phy-connection-type = "sgmii";
+ 	};
+ 
+ 	ethernet@e4000 {
+-		phy-handle = <&rgmii_phy1>;
+-		phy-connection-type = "rgmii-txid";
++                fixed-link = <1 1 1000 0 0>;
++                phy-connection-type = "rgmii-txid";
+ 	};
+ 
+ 	ethernet@e6000 {
+-		phy-handle = <&rgmii_phy2>;
+-		phy-connection-type = "rgmii-txid";
++                fixed-link = <1 1 1000 0 0>;
++                phy-connection-type = "rgmii-txid";
+ 	};
+ 
+ 	ethernet@e8000 {
+-		phy-handle = <&qsgmii_phy3>;
+-		phy-connection-type = "qsgmii";
++                fixed-link = <1 1 1000 0 0>;
++                phy-connection-type = "sgmii";
+ 	};
+ 
+ 	ethernet@ea000 {
+-		phy-handle = <&qsgmii_phy4>;
+-		phy-connection-type = "qsgmii";
++                fixed-link = <1 1 1000 0 0>;
++                phy-connection-type = "sgmii";
+ 	};
+ 
+ 	ethernet@f0000 { /* 10GEC1 */
+-		phy-handle = <&aqr105_phy>;
+-		phy-connection-type = "xgmii";
++                fixed-link = <1 1 1000 0 0>;
++                phy-connection-type = "sgmii";
+ 	};
+ 	dpa-fman0-oh@2 {
+                 compatible = "fsl,dpa-oh";
+diff --git a/drivers/net/ethernet/freescale/sdk_fman/Peripherals/FM/MAC/memac.c b/drivers/net/ethernet/freescale/sdk_fman/Peripherals/FM/MAC/memac.c
+index c62a93a6560f..ca087953d9d1 100644
+--- a/drivers/net/ethernet/freescale/sdk_fman/Peripherals/FM/MAC/memac.c
++++ b/drivers/net/ethernet/freescale/sdk_fman/Peripherals/FM/MAC/memac.c
+@@ -92,8 +92,8 @@ static void SetupSgmiiInternalPhy(t_Memac *p_Memac, uint8_t phyAddr)
+ 
+     /* SGMII mode + AN enable */
+     tmpReg16 = PHY_SGMII_IF_MODE_AN | PHY_SGMII_IF_MODE_SGMII;
+-    if ((p_Memac->enetMode) == e_ENET_MODE_SGMII_2500)
+-        tmpReg16 = PHY_SGMII_CR_PHY_RESET | PHY_SGMII_IF_SPEED_GIGABIT | PHY_SGMII_IF_MODE_SGMII;
++    /* SGMII mode + AN disable */
++    tmpReg16 = PHY_SGMII_CR_PHY_RESET | PHY_SGMII_IF_SPEED_GIGABIT | PHY_SGMII_IF_MODE_SGMII;
+ 
+     p_Memac->enetMode = MAKE_ENET_MODE(ENET_INTERFACE_FROM_MODE(p_Memac->enetMode), e_ENET_SPEED_1000);
+     MEMAC_MII_WritePhyReg(p_Memac, phyAddr, 0x14, tmpReg16);
+-- 
+2.17.1
+

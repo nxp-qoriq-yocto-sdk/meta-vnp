@@ -1,0 +1,5 @@
+
+FILESEXTRAPATHS_prepend := "${THISDIR}/${PN}:"
+
+COMPATIBLE_MACHINE = "(ls1021a|ls1043a|t1042|t1024|ls1043avnpevb)"
+

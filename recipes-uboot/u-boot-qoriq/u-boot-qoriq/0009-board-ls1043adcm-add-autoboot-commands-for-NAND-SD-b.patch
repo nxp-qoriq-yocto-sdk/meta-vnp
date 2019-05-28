@@ -1,0 +1,60 @@
+From 750b2398d33b583c9518c0c5d471531938668b56 Mon Sep 17 00:00:00 2001
+From: Rajesh Bhagat <rajesh.bhagat@nxp.com>
+Date: Thu, 1 Feb 2018 02:31:31 +0530
+Subject: [PATCH 09/31] board: ls1043adcm: add autoboot commands for NAND/SD
+ boot source
+
+Adds autoboot commands for NAND/SD boot source
+
+Signed-off-by: Rajesh Bhagat <rajesh.bhagat@nxp.com>
+---
+ include/configs/ls1043adcm.h | 33 +++++++++++++++++++++++++++++++++
+ 1 file changed, 33 insertions(+)
+
+diff --git a/include/configs/ls1043adcm.h b/include/configs/ls1043adcm.h
+index 40e7a0246e..d426bb6c28 100644
+--- a/include/configs/ls1043adcm.h
++++ b/include/configs/ls1043adcm.h
+@@ -316,6 +316,39 @@
+ #define CONFIG_SCSI_DEV_LIST {SCSI_VEND_ID, SCSI_DEV_ID}
+ #endif
+ 
++#undef CONFIG_EXTRA_ENV_SETTINGS
++#define CONFIG_EXTRA_ENV_SETTINGS		\
++	"hwconfig=fsl_ddr:bank_intlv=auto\0"	\
++	"fdt_high=0xffffffffffffffff\0"		\
++	"initrd_high=0xffffffffffffffff\0"	\
++	"load_addr=0xa0000000\0"		\
++	"kernel_start=0x1000000\0"		\
++	"kernel_addr_nand=0x61000000\0"		\
++	"kernel_addr_nor=0x41000000\0"		\
++	"kernel_addr_sd=0x8000\0"		\
++	"kernel_size=0x2800000\0"		\
++	"kernel_size_sd=0x14000\0"		\
++	"console=ttyS0,115200\0"		\
++	"qspi_bootcmd=echo Trying load from qspi..;"	\
++		"sf probe && sf read $load_addr "	\
++		"$kernel_start $kernel_size; bootm $load_addr\0"	\
++	"nand_bootcmd=echo Trying load from nand..;"	\
++		"nand read $load_addr $kernel_start "	\
++		"$kernel_size; bootm $load_addr\0"	    \
++	"sd_bootcmd=echo Trying load from SD ..;"       \
++		"mmcinfo; mmc read $load_addr "         \
++		"$kernel_addr_sd $kernel_size_sd && bootm $load_addr\0"
++
++#undef CONFIG_BOOTCOMMAND
++#if defined(CONFIG_QSPI_BOOT) || defined(CONFIG_SD_BOOT_QSPI)
++#define CONFIG_BOOTCOMMAND "run nand_bootcmd"
++#elif defined(CONFIG_SD_BOOT)
++#define CONFIG_BOOTCOMMAND "run sd_bootcmd"
++#else
++#define CONFIG_BOOTCOMMAND "run nand_bootcmd"
++#endif
++
++
+ #include <asm/fsl_secure_boot.h>
+ 
+ #endif /* __LS1043ADCM_H__ */
+-- 
+2.17.1
+

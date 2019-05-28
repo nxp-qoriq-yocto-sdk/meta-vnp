@@ -1,0 +1,26 @@
+diff -Naur libnetfilter_conntrack-2017-07-25-e8704326_mod/src/conntrack/build.c libnetfilter_conntrack-2017-07-25-e8704326_mod1/src/conntrack/build.c
+--- libnetfilter_conntrack-2017-07-25-e8704326_mod/src/conntrack/build.c	2018-02-22 18:16:37.573695513 +0530
++++ libnetfilter_conntrack-2017-07-25-e8704326_mod1/src/conntrack/build.c	2018-02-22 18:22:37.705689342 +0530
+@@ -435,6 +435,13 @@
+ 	nfnl_addattr16(&req->nlh, size, CTA_ZONE, htons(ct->zone));
+ }
+ 
++static void __build_id(struct nfnlhdr *req,
++			size_t size,
++			const struct nf_conntrack *ct)
++{
++	nfnl_addattr32(&req->nlh, size, CTA_ID, htonl(ct->id));
++}
++
+ static void __build_labels(struct nfnlhdr *req,
+ 			   size_t size,
+ 			   const struct nf_conntrack *ct)
+@@ -594,5 +601,8 @@
+ 	if (test_bit(ATTR_CONNLABELS, ct->head.set))
+ 		__build_labels(req, size, ct);
+ 
++	if (test_bit(ATTR_ID, ct->head.set))
++		__build_id(req, size, ct);
++
+ 	return 0;
+ }

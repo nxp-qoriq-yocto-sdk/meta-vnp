@@ -1,0 +1,32 @@
+diff -Naur rtl8812AU_8821AU_linux-org/Makefile rtl8812AU_8821AU_linux/Makefile
+--- rtl8812AU_8821AU_linux-org/Makefile	2019-02-08 15:03:16.192156716 +0530
++++ rtl8812AU_8821AU_linux/Makefile	2019-02-08 16:16:56.672005731 +0530
+@@ -3,7 +3,7 @@
+ #EXTRA_CFLAGS += -O3
+ EXTRA_CFLAGS += -Wall
+ #EXTRA_CFLAGS += -Wextra
+-EXTRA_CFLAGS += -Werror
++#EXTRA_CFLAGS += -Werror
+ #EXTRA_CFLAGS += -pedantic
+ #EXTRA_CFLAGS += -Wshadow -Wpointer-arith -Wcast-qual -Wstrict-prototypes -Wmissing-prototypes
+ EXTRA_CFLAGS += -Wframe-larger-than=1536
+@@ -72,8 +72,8 @@
+ ######### Notify SDIO Host Keep Power During Syspend ##########
+ CONFIG_RTW_SDIO_PM_KEEP_POWER = y
+ ###################### Platform Related #######################
+-CONFIG_PLATFORM_I386_PC = y
+-CONFIG_PLATFORM_ARM_RPI = n
++CONFIG_PLATFORM_I386_PC = n
++CONFIG_PLATFORM_ARM_RPI = y
+ CONFIG_PLATFORM_ANDROID_X86 = n
+ CONFIG_PLATFORM_ANDROID_INTEL_X86 = n
+ CONFIG_PLATFORM_JB_X86 = n
+@@ -1583,6 +1583,8 @@
+ modules:
+ 	$(MAKE) ARCH=$(ARCH) CROSS_COMPILE=$(CROSS_COMPILE) -C $(KSRC) M=$(shell pwd)  modules
+ 
++modules_install:
++
+ strip:
+ 	$(CROSS_COMPILE)strip $(MODULE_NAME).ko --strip-unneeded
+ 

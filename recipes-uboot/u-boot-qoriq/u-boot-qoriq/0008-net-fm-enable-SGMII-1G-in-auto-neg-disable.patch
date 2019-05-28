@@ -1,0 +1,27 @@
+From 29f39d24434dc139abafd136cfa4729ebb77e183 Mon Sep 17 00:00:00 2001
+From: Prabhakar Kushwaha <prabhakar.kushwaha@nxp.com>
+Date: Tue, 30 Jan 2018 10:36:39 +0530
+Subject: [PATCH 08/31] net: fm: enable SGMII 1G in auto-neg disable
+
+Signed-off-by: Vladimir Oltean <vladimir.oltean@nxp.com>
+Signed-off-by: Prabhakar Kushwaha <prabhakar.kushwaha@nxp.com>
+---
+ drivers/net/fm/eth.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/net/fm/eth.c b/drivers/net/fm/eth.c
+index d719afacad..6613720c21 100644
+--- a/drivers/net/fm/eth.c
++++ b/drivers/net/fm/eth.c
+@@ -81,7 +81,7 @@ qsgmii_loop:
+ #ifdef CONFIG_TARGET_LS1043ADCM
+ 	mdelay(50);
+ 	memac_mdio_write(&bus, i, MDIO_DEVAD_NONE, 0, 0x8000);
+-	memac_mdio_write(&bus, i, MDIO_DEVAD_NONE, 0x14, 0x8);
++	memac_mdio_write(&bus, i, MDIO_DEVAD_NONE, 0x14, 0x9);
+ 	memac_mdio_write(&bus, i, MDIO_DEVAD_NONE, 0, 0x8140);
+ #endif
+ 	if ((priv->enet_if == PHY_INTERFACE_MODE_QSGMII) && (i < 3)) {
+-- 
+2.17.1
+

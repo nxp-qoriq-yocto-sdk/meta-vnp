@@ -1,0 +1,18 @@
+diff -Naur libnetfilter_conntrack-2017-07-25-e8704326/include/libnetfilter_conntrack/linux_nf_conntrack_common.h libnetfilter_conntrack-2017-07-25-e8704326_mod/include/libnetfilter_conntrack/linux_nf_conntrack_common.h
+--- libnetfilter_conntrack-2017-07-25-e8704326/include/libnetfilter_conntrack/linux_nf_conntrack_common.h	2017-07-25 06:36:29.000000000 +0530
++++ libnetfilter_conntrack-2017-07-25-e8704326_mod/include/libnetfilter_conntrack/linux_nf_conntrack_common.h	2018-02-27 20:23:04.462162212 +0530
+@@ -102,6 +102,14 @@
+ 	/* Conntrack got a helper explicitly attached via CT target. */
+ 	IPS_HELPER_BIT = 13,
+ 	IPS_HELPER = (1 << IPS_HELPER_BIT),
++
++	/* Connection  cannot expire */
++	IPS_PERMANENT_BIT = 14,
++	IPS_PERMANENT = (1 << IPS_PERMANENT_BIT),
++
++	/* Connection is assured by DPI application */
++	IPS_DPI_ALLOWED_BIT = 15,
++	IPS_DPI_ALLOWED = (1 << IPS_DPI_ALLOWED_BIT),
+ };
+ 
+ /* Connection tracking event types */

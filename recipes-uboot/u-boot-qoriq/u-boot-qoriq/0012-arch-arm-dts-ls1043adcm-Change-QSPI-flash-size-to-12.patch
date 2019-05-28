@@ -1,0 +1,30 @@
+From ada8de4d128b2868e29c1e9c17b1975f10763d33 Mon Sep 17 00:00:00 2001
+From: Rajesh Bhagat <rajesh.bhagat@nxp.com>
+Date: Thu, 8 Feb 2018 02:30:47 +0530
+Subject: [PATCH 12/31] arch: arm: dts: ls1043adcm: Change QSPI flash size to
+ 128MB
+
+Change QSPI flash size to 128MB (0x8000000).
+
+Signed-off-by: Rajesh Bhagat <rajesh.bhagat@nxp.com>
+---
+ arch/arm/dts/fsl-ls1043a-dcm.dts | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/arch/arm/dts/fsl-ls1043a-dcm.dts b/arch/arm/dts/fsl-ls1043a-dcm.dts
+index d490855851..481713a4a9 100644
+--- a/arch/arm/dts/fsl-ls1043a-dcm.dts
++++ b/arch/arm/dts/fsl-ls1043a-dcm.dts
+@@ -22,6 +22,9 @@
+ };
+ 
+ &qspi {
++       reg = <0x0 0x1550000 0x0 0x10000>,
++              <0x0 0x40000000 0x0 0x8000000>;
++
+        bus-num = <0>;
+        status = "okay";
+ 
+-- 
+2.17.1
+
