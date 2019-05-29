@@ -1,6 +1,6 @@
 FILESEXTRAPATHS_prepend := "${THISDIR}/${PN}:"
 
-SRC_URI_append_ls1043ardb += " \
+SRC_URI_append_ls1043avnpevb += " \
 	file://0001-board-ls1043adcm-Enable-IIC2-controller-during-SD-bo.patch \
 	file://0002-mtd-spi-add-support-for-mt25tl01g-SPI-flash.patch \
 	file://0003-board-ls1043a-LS1043A-DCM-board-support.patch \
