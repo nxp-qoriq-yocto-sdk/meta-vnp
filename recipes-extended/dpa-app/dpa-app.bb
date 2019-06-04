@@ -3,7 +3,7 @@ DESCRIPTION = "Datapath acceleration application"
 LICENSE = "GPLv2"
 LIC_FILES_CHKSUM = "file://COPYING;md5=8ca43cbc842c2336e835926c2166c28b"
 
-SRC_URI = "git://git@bitbucket.sw.nxp.com/dnagw/dpa-app.git;nobranch=1;protocol=ssh \
+SRC_URI = "git://source.codeaurora.org/external/qoriq/qoriq-yocto-sdk/dpa-app;nobranch=1 \
            file://001_dcm_dpa-app.patch \
 "
 SRCREV = "c7d39171d27324d90138e1093fc8a17cdb85795a"

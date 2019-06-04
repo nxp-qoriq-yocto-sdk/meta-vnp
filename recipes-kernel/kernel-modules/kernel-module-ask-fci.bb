@@ -3,7 +3,7 @@ LICENSE = "GPLv2"
 
 LIC_FILES_CHKSUM = "file://COPYING;md5=8ca43cbc842c2336e835926c2166c28b"
 
-SRC_URI = "git://git@bitbucket.sw.nxp.com/dnagw/fci.git;nobranch=1;protocol=ssh"
+SRC_URI = "git://source.codeaurora.org/external/qoriq/qoriq-yocto-sdk/fci;nobranch=1"
 SRCREV = "d38ebd017fddd33897019bd6efeed482371761f5"
 
 

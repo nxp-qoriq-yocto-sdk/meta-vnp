@@ -2,7 +2,7 @@ DESCRIPTION = "ASK Kernel module for CDX"
 LICENSE = "GPLv2"
 LIC_FILES_CHKSUM = "file://COPYING;md5=8ca43cbc842c2336e835926c2166c28b"
 
-SRC_URI = "git://git@bitbucket.sw.nxp.com/dnagw/cdx.git;nobranch=1;protocol=ssh \
+SRC_URI = "git://source.codeaurora.org/external/qoriq/qoriq-yocto-sdk/cdx;nobranch=1 \
            file://cdx-qos-queue-check.patch \
            file://001_dcm_cdx.patch \
 " 

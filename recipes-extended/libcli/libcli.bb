@@ -3,7 +3,7 @@ DEPENDS = ""
 LICENSE = "GPLv2"
 LIC_FILES_CHKSUM = "file://COPYING;md5=fad9b3332be894bab9bc501572864b29"
 
-SRC_URI = "git://git@bitbucket.sw.nxp.com/dnagw/libcli.git;nobranch=1;protocol=ssh"
+SRC_URI = "git://source.codeaurora.org/external/qoriq/qoriq-yocto-sdk/libcli;nobranch=1 "
 SRCREV = "68ff8c0721e489dd1a49578079ffb4c68b296871"
 
 S = "${WORKDIR}/git"
