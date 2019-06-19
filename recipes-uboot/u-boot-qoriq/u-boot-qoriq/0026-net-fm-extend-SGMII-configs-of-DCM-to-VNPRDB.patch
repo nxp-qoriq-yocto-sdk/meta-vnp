@@ -1,0 +1,42 @@
+From 77824e0fc728d95cd2b7827546e053823baf0901 Mon Sep 17 00:00:00 2001
+From: Calvin Johnson <calvin.johnson@nxp.com>
+Date: Mon, 22 Apr 2019 15:22:40 +0530
+Subject: [PATCH 26/40] net: fm: extend SGMII configs of DCM to VNPRDB
+
+Extend SGMII configs of DCM to VNPRDB.
+
+Signed-off-by: Calvin Johnson <calvin.johnson@nxp.com>
+---
+ drivers/net/fm/eth.c    | 2 +-
+ drivers/net/phy/fixed.c | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/net/fm/eth.c b/drivers/net/fm/eth.c
+index 6bd6c43232..b7bd9e0ba2 100644
+--- a/drivers/net/fm/eth.c
++++ b/drivers/net/fm/eth.c
+@@ -78,7 +78,7 @@ qsgmii_loop:
+ 	value = PHY_SGMII_CR_DEF_VAL | PHY_SGMII_CR_RESET_AN;
+ 	memac_mdio_write(&bus, i, MDIO_DEVAD_NONE, 0, value);
+ 
+-#ifdef CONFIG_TARGET_LS1043ADCM
++#if defined(CONFIG_TARGET_LS1043ADCM) || defined(CONFIG_TARGET_LS1043AVNPRDB)
+ 	mdelay(50);
+ 	memac_mdio_write(&bus, i, MDIO_DEVAD_NONE, 0, 0x8000);
+ 	memac_mdio_write(&bus, i, MDIO_DEVAD_NONE, 0x14, 0x9);
+diff --git a/drivers/net/phy/fixed.c b/drivers/net/phy/fixed.c
+index 9967257f18..a713d246fb 100644
+--- a/drivers/net/phy/fixed.c
++++ b/drivers/net/phy/fixed.c
+@@ -35,7 +35,7 @@ int fixedphy_probe(struct phy_device *phydev)
+ 
+ 	phydev->priv = priv;
+ 
+-#ifdef CONFIG_TARGET_LS1043ADCM
++#if defined(CONFIG_TARGET_LS1043ADCM) || defined(CONFIG_TARGET_LS1043AVNPRDB)
+ 	priv->link_speed = SPEED_1000;
+ 	priv->duplex = DUPLEX_FULL;
+ #else
+-- 
+2.17.1
+

@@ -1,0 +1,37 @@
+From c924f189f29eff91e7f97c1409c671412fa37cb6 Mon Sep 17 00:00:00 2001
+From: Bhanu Chander G <bhanu.gaddoju@nxp.com>
+Date: Fri, 14 Jun 2019 15:46:02 +0530
+Subject: [PATCH] enabling saveenv for QSPI flash
+
+---
+ configs/ls1043avnprdb_qspi_defconfig | 1 +
+ include/configs/ls1043avnprdb.h      | 1 -
+ 2 files changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/configs/ls1043avnprdb_qspi_defconfig b/configs/ls1043avnprdb_qspi_defconfig
+index 6becdda753..bf469066a5 100644
+--- a/configs/ls1043avnprdb_qspi_defconfig
++++ b/configs/ls1043avnprdb_qspi_defconfig
+@@ -18,6 +18,7 @@ CONFIG_CMD_I2C=y
+ CONFIG_CMD_USB=y
+ CONFIG_CMD_CACHE=y
+ CONFIG_OF_CONTROL=y
++CONFIG_ENV_IS_IN_SPI_FLASH=y
+ CONFIG_DM=y
+ CONFIG_FSL_CAAM=y
+ CONFIG_DM_SPI_FLASH=y
+diff --git a/include/configs/ls1043avnprdb.h b/include/configs/ls1043avnprdb.h
+index 3b10d89b62..612f8d3699 100755
+--- a/include/configs/ls1043avnprdb.h
++++ b/include/configs/ls1043avnprdb.h
+@@ -261,7 +261,6 @@ board/freescale/ls1043ardb/ls1043avnprdb_rcw_emmc_nand.cfg
+ #elif defined(CONFIG_QSPI_BOOT)
+ #define SYS_NO_FLASH
+ #undef CONFIG_CMD_IMLS
+-#define CONFIG_ENV_IS_IN_SPI_FLASH
+ #define CONFIG_ENV_OFFSET		0x300000	/* 3MB */
+ #define CONFIG_ENV_SECT_SIZE		0x40000		/* 256KB */
+ 
+-- 
+2.17.1
+

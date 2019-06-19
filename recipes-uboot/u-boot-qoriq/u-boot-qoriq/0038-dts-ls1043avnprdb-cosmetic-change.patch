@@ -1,0 +1,28 @@
+From a18207c558eecad4f4e2b14460aaaf27042a6966 Mon Sep 17 00:00:00 2001
+From: Calvin Johnson <calvin.johnson@nxp.com>
+Date: Thu, 9 May 2019 19:58:02 +0530
+Subject: [PATCH 38/40] dts: ls1043avnprdb: cosmetic change
+
+To be consistent, model is modified as "LS1043AVNPRDB Board".
+
+Signed-off-by: Calvin Johnson <calvin.johnson@nxp.com>
+---
+ arch/arm/dts/fsl-ls1043a-dcm.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/dts/fsl-ls1043a-dcm.dts b/arch/arm/dts/fsl-ls1043a-dcm.dts
+index 1a033b0772..75d103ee20 100644
+--- a/arch/arm/dts/fsl-ls1043a-dcm.dts
++++ b/arch/arm/dts/fsl-ls1043a-dcm.dts
+@@ -13,7 +13,7 @@
+ /include/ "fsl-ls1043a.dtsi"
+ 
+ / {
+-	model = "LS1043A VNPRDB Board";
++	model = "LS1043AVNPRDB Board";
+ 
+         aliases {
+ 		spi0 = &qspi;
+-- 
+2.17.1
+

@@ -1,0 +1,30 @@
+From a72b7ef123dd360fc3543c1f381bba7579b76ea4 Mon Sep 17 00:00:00 2001
+From: Calvin Johnson <calvin.johnson@nxp.com>
+Date: Thu, 9 May 2019 16:58:59 +0530
+Subject: [PATCH 33/40] armv8/ls1043ardb/rcw: add rcw for emmc and nand
+
+For VNPRDB platform use same golden rcw for QSPI, eMMC and NAND
+boot options.
+
+Signed-off-by: Calvin Johnson <calvin.johnson@nxp.com>
+---
+ board/freescale/ls1043ardb/ls1043avnprdb_rcw_emmc_nand.cfg | 7 +++++++
+ 1 file changed, 7 insertions(+)
+ create mode 100644 board/freescale/ls1043ardb/ls1043avnprdb_rcw_emmc_nand.cfg
+
+diff --git a/board/freescale/ls1043ardb/ls1043avnprdb_rcw_emmc_nand.cfg b/board/freescale/ls1043ardb/ls1043avnprdb_rcw_emmc_nand.cfg
+new file mode 100644
+index 0000000000..0ea8bc696f
+--- /dev/null
++++ b/board/freescale/ls1043ardb/ls1043avnprdb_rcw_emmc_nand.cfg
+@@ -0,0 +1,7 @@
++#PBL preamble and RCW header
++aa55aa55 01ee0100
++# RCW
++0810000e 0a000000 00000000 00000000
++13550002 80004012 40025000 c1002000
++00000000 00000000 00000000 00018801
++20004500 00001002 00000096 00000001
+-- 
+2.17.1
+

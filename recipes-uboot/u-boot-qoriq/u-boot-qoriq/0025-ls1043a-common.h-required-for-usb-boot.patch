@@ -1,0 +1,131 @@
+From e9f896ea56f86d7411f149982cc681f31ff6d70b Mon Sep 17 00:00:00 2001
+From: Calvin Johnson <calvin.johnson@nxp.com>
+Date: Tue, 23 Apr 2019 23:38:34 +0530
+Subject: [PATCH 25/40] ls1043a common.h required for usb boot
+
+Without this patch env defaults doesn't loaded properly.
+Need to work on this patch to root cause the issue.
+
+Signed-off-by: Calvin Johnson <calvin.johnson@nxp.com>
+---
+ include/configs/ls1043a_common.h | 59 +++++++++++++++++---------------
+ include/configs/ls1043avnprdb.h  |  2 ++
+ 2 files changed, 33 insertions(+), 28 deletions(-)
+
+diff --git a/include/configs/ls1043a_common.h b/include/configs/ls1043a_common.h
+index d1469a20df..baf05b4934 100644
+--- a/include/configs/ls1043a_common.h
++++ b/include/configs/ls1043a_common.h
+@@ -244,7 +244,8 @@
+ #ifndef CONFIG_SPL_BUILD
+ #define BOOT_TARGET_DEVICES(func) \
+ 	func(MMC, mmc, 0) \
+-	func(USB, usb, 0)
++	func(USB, usb, 0) \
++	func(DHCP, dhcp, na)
+ #include <config_distro_bootcmd.h>
+ #endif
+ 
+@@ -258,11 +259,12 @@
+ 	"scriptaddr=0x80000000\0"		\
+ 	"scripthdraddr=0x80080000\0"		\
+ 	"fdtheader_addr_r=0x80100000\0"		\
+-	"kernelheader_addr_r=0x80200000\0"	\
++	"kernelheader_addr_r=0x60800000\0"	\
+ 	"kernel_addr_r=0x81000000\0"		\
++        "kernel_start=0x1000000\0"              \
++        "kernelheader_start=0x800000\0"         \
+ 	"fdt_addr_r=0x90000000\0"		\
+ 	"load_addr=0xa0000000\0"		\
+-	"kernelheader_addr=0x60800000\0"	\
+ 	"kernel_size=0x2800000\0"		\
+ 	"kernelheader_size=0x40000\0"		\
+ 	"kernel_addr_sd=0x8000\0"		\
+@@ -271,38 +273,39 @@
+ 	"kernelhdr_size_sd=0x10\0"		\
+ 	"console=ttyS0,115200\0"		\
+ 	"boot_os=y\0"				\
+-	"mtdparts=" CONFIG_MTDPARTS_DEFAULT "\0"	\
++        "boot_os=y\0"                           \
+ 	BOOTENV					\
+ 	"boot_scripts=ls1043ardb_boot.scr\0"	\
+ 	"boot_script_hdr=hdr_ls1043ardb_bs.out\0"	\
+ 	"scan_dev_for_boot_part="		\
+-		"part list ${devtype} ${devnum} devplist; "	\
+-		"env exists devplist || setenv devplist 1; "	\
+-		"for distro_bootpart in ${devplist}; do "	\
+-			"if fstype ${devtype} "			\
+-				"${devnum}:${distro_bootpart} "	\
+-				"bootfstype; then "		\
+-				"run scan_dev_for_boot; "	\
+-			"fi; "					\
+-		"done\0"			\
+-	"scan_dev_for_boot="					\
+-		"echo Scanning ${devtype} "			\
+-			"${devnum}:${distro_bootpart}...; "	\
+-		"for prefix in ${boot_prefixes}; do "		\
+-			"run scan_dev_for_scripts; "		\
+-		"done;\0"					\
+-	"boot_a_script="					\
+-		"load ${devtype} ${devnum}:${distro_bootpart} "	\
+-			"${scriptaddr} ${prefix}${script}; "	\
+-		"env exists secureboot && load ${devtype} "	\
++                "part list ${devtype} ${devnum} devplist; "     \
++                "env exists devplist || setenv devplist 1; "    \
++                "for distro_bootpart in ${devplist}; do "       \
++                        "if fstype ${devtype} "                 \
++                                "${devnum}:${distro_bootpart} " \
++                                "bootfstype; then "             \
++                                "run scan_dev_for_boot; "       \
++                        "fi; "                                  \
++                "done\0"                        \
++        "scan_dev_for_boot="                                    \
++                "echo Scanning ${devtype} "                     \
++                        "${devnum}:${distro_bootpart}...; "     \
++                "for prefix in ${boot_prefixes}; do "           \
++                        "run scan_dev_for_scripts; "            \
++                "done;\0"                                       \
++        "boot_a_script="                                        \
++                "load ${devtype} ${devnum}:${distro_bootpart} " \
++                        "${scriptaddr} ${prefix}${script}; "    \
++                "env exists secureboot && load ${devtype} "     \
+ 			"${devnum}:${distro_bootpart} "		\
+-			"${scripthdraddr} ${prefix}${boot_script_hdr} "	\
+-			"&& esbc_validate ${scripthdraddr};"	\
+-		"source ${scriptaddr}\0"			\
++                        "${scripthdraddr} ${prefix}${boot_script_hdr}; " \
++                        "env exists secureboot "        \
++                        "&& esbc_validate ${scripthdraddr};"    \
++                "source ${scriptaddr}\0"    \
+ 	"qspi_bootcmd=echo Trying load from qspi..;"	\
+ 		"sf probe && sf read $load_addr "	\
+-		"$kernel_addr $kernel_size; env exists secureboot "	\
+-		"&& sf read $kernelheader_addr_r $kernelheader_addr "	\
++                "$kernel_start $kernel_size; env exists secureboot "    \
++                "&& sf read $kernelheader_addr_r $kernelheader_start "  \
+ 		"$kernelheader_size && esbc_validate ${kernelheader_addr_r}; " \
+ 		"bootm $load_addr#$board\0"	\
+ 	"nor_bootcmd=echo Trying load from nor..;"	\
+diff --git a/include/configs/ls1043avnprdb.h b/include/configs/ls1043avnprdb.h
+index 9c031fe889..0dc07b7196 100755
+--- a/include/configs/ls1043avnprdb.h
++++ b/include/configs/ls1043avnprdb.h
+@@ -326,6 +326,7 @@
+ #define CONFIG_SCSI_DEV_LIST {SCSI_VEND_ID, SCSI_DEV_ID}
+ #endif
+ 
++#if defined(CONFIG_SD_BOOT) || defined(CONFIG_NAND_BOOT)
+ #undef CONFIG_EXTRA_ENV_SETTINGS
+ #define CONFIG_EXTRA_ENV_SETTINGS		\
+ 	"hwconfig=fsl_ddr:bank_intlv=auto\0"	\
+@@ -362,6 +363,7 @@
+ #else
+ #define CONFIG_BOOTCOMMAND "run nand_bootcmd"
+ #endif
++#endif
+ 
+ 
+ #include <asm/fsl_secure_boot.h>
+-- 
+2.17.1
+

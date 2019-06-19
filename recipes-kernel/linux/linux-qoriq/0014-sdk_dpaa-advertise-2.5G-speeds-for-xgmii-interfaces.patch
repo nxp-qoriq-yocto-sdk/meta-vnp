@@ -1,0 +1,31 @@
+From c16eca70293057b0f8836c691b50b65d216bf26b Mon Sep 17 00:00:00 2001
+From: Camelia Groza <camelia.groza@nxp.com>
+Date: Thu, 28 Mar 2019 16:52:18 +0200
+Subject: [PATCH 14/16] sdk_dpaa: advertise 2.5G speeds for xgmii interfaces
+
+Signed-off-by: Camelia Groza <camelia.groza@nxp.com>
+Signed-off-by: Calvin Johnson <calvin.johnson@nxp.com>
+---
+ drivers/net/ethernet/freescale/sdk_dpaa/mac.c | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/net/ethernet/freescale/sdk_dpaa/mac.c b/drivers/net/ethernet/freescale/sdk_dpaa/mac.c
+index a6bfceaf6de7..2504d61eaff3 100644
+--- a/drivers/net/ethernet/freescale/sdk_dpaa/mac.c
++++ b/drivers/net/ethernet/freescale/sdk_dpaa/mac.c
+@@ -351,9 +351,10 @@ static int __cold mac_probe(struct platform_device *_of_dev)
+ 	    mac_dev->max_speed == SPEED_2500)
+ 		mac_dev->if_support |= SUPPORTED_1000baseT_Full;
+ 
+-	/* The 10G interface only supports one mode */
++	/* 10G interfaces can support both 10G and 2.5G modes */
+ 	if (strstr(char_prop, "xgmii"))
+-		mac_dev->if_support = SUPPORTED_10000baseT_Full;
++		mac_dev->if_support = SUPPORTED_2500baseX_Full |
++				      SUPPORTED_10000baseT_Full;
+ 
+ 	/* Get the rest of the PHY information */
+ 	mac_dev->phy_node = of_parse_phandle(mac_node, "phy-handle", 0);
+-- 
+2.17.1
+

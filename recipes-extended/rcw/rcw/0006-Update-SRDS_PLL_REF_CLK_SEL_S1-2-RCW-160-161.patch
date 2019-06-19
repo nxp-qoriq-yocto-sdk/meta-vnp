@@ -1,0 +1,30 @@
+From 8be2a7db09f9f01bf9bb14aad673b8770315c733 Mon Sep 17 00:00:00 2001
+From: Sudhanshu Gupta <sudhanshu.gupta@nxp.com>
+Date: Tue, 26 Mar 2019 09:15:23 +0000
+Subject: [PATCH 6/7] Update SRDS_PLL_REF_CLK_SEL_S1=2 (RCW[160:161])
+
+PLL1=156.25MHz
+PLL2=100MHz
+
+Signed-off-by: Sudhanshu Gupta <sudhanshu.gupta@nxp.com>
+Signed-off-by: Calvin Johnson <calvin.johnson@nxp.com>
+---
+ ls1043ardb/RR_SPPP_1355/rcw_1600_qspiboot.rcw | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/ls1043ardb/RR_SPPP_1355/rcw_1600_qspiboot.rcw b/ls1043ardb/RR_SPPP_1355/rcw_1600_qspiboot.rcw
+index a0a89b3..cd0af45 100755
+--- a/ls1043ardb/RR_SPPP_1355/rcw_1600_qspiboot.rcw
++++ b/ls1043ardb/RR_SPPP_1355/rcw_1600_qspiboot.rcw
+@@ -43,7 +43,7 @@ CGA_PLL1_RAT=16
+ CGA_PLL2_RAT=10
+ SRDS_PRTCL_S1=4949
+ FM1_MAC_RAT=1
+-SRDS_PLL_REF_CLK_SEL_S1=0
++SRDS_PLL_REF_CLK_SEL_S1=2
+ SRDS_DIV_PEX=1
+ DDR_FDBK_MULT=2
+ DDR_REFCLK_SEL=1
+-- 
+2.17.1
+

@@ -1,0 +1,52 @@
+From 6d19f13ae237d6db50958e2e714122ad94e11dd0 Mon Sep 17 00:00:00 2001
+From: Calvin Johnson <calvin.johnson@nxp.com>
+Date: Mon, 29 Apr 2019 23:20:14 +0530
+Subject: [PATCH 28/40] configs: rename ls1043avnp_rdb_defconfig to
+ ls1043avnprdb_qspi_defconfig
+
+-Disable CONFIG_SPI_FLASH_USE_4K_SECTORS to avoid hybrid sector model
+in QSPI flash.
+-Avoid unwanted compilation of ST Micro flash support.
+-Enable QSPI_BOOT env extra options.
+
+Signed-off-by: Calvin Johnson <calvin.johnson@nxp.com>
+---
+ ...ls1043avnp_rdb_defconfig => ls1043avnprdb_qspi_defconfig} | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+ rename configs/{ls1043avnp_rdb_defconfig => ls1043avnprdb_qspi_defconfig} (89%)
+
+diff --git a/configs/ls1043avnp_rdb_defconfig b/configs/ls1043avnprdb_qspi_defconfig
+similarity index 89%
+rename from configs/ls1043avnp_rdb_defconfig
+rename to configs/ls1043avnprdb_qspi_defconfig
+index 4f05d8651d..7ff5896edc 100644
+--- a/configs/ls1043avnp_rdb_defconfig
++++ b/configs/ls1043avnprdb_qspi_defconfig
+@@ -6,8 +6,10 @@ CONFIG_DEFAULT_DEVICE_TREE="fsl-ls1043a-dcm"
+ CONFIG_DISTRO_DEFAULTS=y
+ CONFIG_FIT_VERBOSE=y
+ CONFIG_OF_BOARD_SETUP=y
++CONFIG_SYS_EXTRA_OPTIONS="QSPI_BOOT"
+ CONFIG_QSPI_BOOT=y
+ CONFIG_BOOTDELAY=10
++CONFIG_CMD_GREPENV=y
+ CONFIG_CMD_GPT=y
+ CONFIG_CMD_MMC=y
+ CONFIG_CMD_NAND=y
+@@ -20,8 +22,6 @@ CONFIG_DM=y
+ CONFIG_FSL_CAAM=y
+ CONFIG_DM_SPI_FLASH=y
+ CONFIG_SPI_FLASH=y
+-CONFIG_SPI_FLASH_STMICRO=y
+-# CONFIG_SPI_FLASH_USE_4K_SECTORS is not set
+ CONFIG_PHYLIB=y
+ CONFIG_NETDEVICES=y
+ CONFIG_PHY_GIGE=y
+@@ -39,3 +39,4 @@ CONFIG_USB_XHCI_HCD=y
+ CONFIG_USB_XHCI_DWC3=y
+ CONFIG_USB_STORAGE=y
+ CONFIG_SYS_FSL_DDR3=y
++CONFIG_SPI_FLASH_USE_4K_SECTORS=n
+-- 
+2.17.1
+

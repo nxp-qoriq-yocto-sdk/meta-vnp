@@ -1,0 +1,176 @@
+From 768f3fd766bfc3789cb324c48cbf0d7a1ec6a3d0 Mon Sep 17 00:00:00 2001
+From: Calvin Johnson <calvin.johnson@nxp.com>
+Date: Thu, 2 May 2019 17:53:56 +0530
+Subject: [PATCH 15/16] arm64: dts: ls1043a: support vnp-rdb platform
+
+Signed-off-by: Calvin Johnson <calvin.johnson@nxp.com>
+---
+ .../boot/dts/freescale/fsl-ls1043a-vnprdb.dts | 156 ++++++++++++++++++
+ 1 file changed, 156 insertions(+)
+ create mode 100644 arch/arm64/boot/dts/freescale/fsl-ls1043a-vnprdb.dts
+
+diff --git a/arch/arm64/boot/dts/freescale/fsl-ls1043a-vnprdb.dts b/arch/arm64/boot/dts/freescale/fsl-ls1043a-vnprdb.dts
+new file mode 100644
+index 000000000000..31f16997be4a
+--- /dev/null
++++ b/arch/arm64/boot/dts/freescale/fsl-ls1043a-vnprdb.dts
+@@ -0,0 +1,156 @@
++// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
++/*
++ * Copyright 2019 NXP
++ *
++ */
++
++/dts-v1/;
++#include "fsl-ls1043a.dtsi"
++
++/ {
++	model = "LS1043A VNP RDB";
++
++	aliases {
++		crypto = &crypto;
++		serial0 = &duart0;
++	};
++
++	chosen {
++		stdout-path = "serial0:115200n8";
++	};
++};
++
++&i2c0 {
++	status = "okay";
++	eeprom@50 {
++		compatible = "at24,24c512";
++		reg = <0x50>;
++	};
++};
++
++&qspi {
++	num-cs = <1>;
++	bus-num = <0>;
++	status = "okay";
++
++	qflash0: s25fs512s@0 {
++		compatible = "spansion,m25p80";
++		#address-cells = <1>;
++		#size-cells = <1>;
++		spi-max-frequency = <20000000>;
++		m25p,fast-read;
++		reg = <0>;
++	};
++};
++
++&ifc {
++	status = "okay";
++	#address-cells = <2>;
++	#size-cells = <1>;
++	/* NAND Flash on board */
++	ranges = <0x0 0x0 0x0 0x60000000 0x08000000
++		  0x1 0x0 0x0 0x7e800000 0x00010000
++		  0x2 0x0 0x0 0x7fb00000 0x00000100>;
++		nand@1,0 {
++			compatible = "fsl,ifc-nand";
++			#address-cells = <1>;
++			#size-cells = <1>;
++			reg = <0x1 0x0 0x10000>;
++		};
++};
++
++&uqe {
++	ucc_hdlc: ucc@2000 {
++		compatible = "fsl,ucc-hdlc";
++		rx-clock-name = "clk8";
++		tx-clock-name = "clk9";
++		fsl,rx-sync-clock = "rsync_pin";
++		fsl,tx-sync-clock = "tsync_pin";
++		fsl,tx-timeslot-mask = <0xfffffffe>;
++		fsl,rx-timeslot-mask = <0xfffffffe>;
++		fsl,tdm-framer-type = "e1";
++		fsl,tdm-id = <0>;
++		fsl,siram-entry-id = <0>;
++		fsl,tdm-interface;
++	};
++};
++
++&duart0 {
++	status = "okay";
++};
++
++#include "fsl-ls1043-post.dtsi"
++
++&fman0 {
++	ethernet@e0000 {
++	       fixed-link = <1 1 1000 0 0>;
++	       phy-connection-type = "sgmii";
++	       status = "disabled";
++	};
++
++	ethernet@e2000 {
++	       fixed-link = <1 1 1000 0 0>;
++	       phy-connection-type = "sgmii";
++	};
++
++	ethernet@e4000 {
++	       fixed-link = <1 1 1000 0 0>;
++	       phy-connection-type = "rgmii-txid";
++	};
++
++	ethernet@e6000 {
++	       fixed-link = <1 1 1000 0 0>;
++	       phy-connection-type = "rgmii-txid";
++	};
++
++	ethernet@e8000 {
++	       fixed-link = <1 1 1000 0 0>;
++	       phy-connection-type = "sgmii";
++	       status = "disabled";
++	};
++
++	ethernet@ea000 {
++	       fixed-link = <1 1 1000 0 0>;
++	       phy-connection-type = "sgmii";
++	       status = "disabled";
++	};
++
++	ethernet@f0000 { /* 10GEC1 */
++	       fixed-link = <1 1 1000 0 0>;
++	       phy-connection-type = "sgmii";
++	};
++
++	mdio@fc000 {
++		rgmii_phy1: ethernet-phy@1 {
++			reg = <0x1>;
++		};
++
++		rgmii_phy2: ethernet-phy@2 {
++			reg = <0x2>;
++		};
++
++		qsgmii_phy1: ethernet-phy@4 {
++			reg = <0x4>;
++		};
++
++		qsgmii_phy2: ethernet-phy@5 {
++			reg = <0x5>;
++		};
++
++		qsgmii_phy3: ethernet-phy@6 {
++			reg = <0x6>;
++		};
++
++		qsgmii_phy4: ethernet-phy@7 {
++			reg = <0x7>;
++		};
++	};
++
++	mdio@fd000 {
++		aqr105_phy: ethernet-phy@1 {
++			compatible = "ethernet-phy-ieee802.3-c45";
++			interrupts = <0 132 4>;
++			reg = <0x1>;
++		};
++	};
++};
+-- 
+2.17.1
+

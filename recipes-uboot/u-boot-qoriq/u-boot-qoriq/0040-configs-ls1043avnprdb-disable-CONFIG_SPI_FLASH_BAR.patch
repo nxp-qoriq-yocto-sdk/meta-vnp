@@ -1,0 +1,29 @@
+From de58bd86ae7d80d2421b56c38be3e32697c5ff85 Mon Sep 17 00:00:00 2001
+From: Calvin Johnson <calvin.johnson@nxp.com>
+Date: Tue, 4 Jun 2019 12:59:20 +0530
+Subject: [PATCH 40/40] configs: ls1043avnprdb: disable CONFIG_SPI_FLASH_BAR
+
+Undefine CONFIG_SPI_FLASH_BAR for LS1043AVNPRDB as it
+is overwriting to 0x0 offset while writing to offests higher than
+16MB.
+
+Signed-off-by: Calvin Johnson <calvin.johnson@nxp.com>
+---
+ include/configs/ls1043avnprdb.h | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/include/configs/ls1043avnprdb.h b/include/configs/ls1043avnprdb.h
+index de4a14b0fb..3b10d89b62 100755
+--- a/include/configs/ls1043avnprdb.h
++++ b/include/configs/ls1043avnprdb.h
+@@ -264,7 +264,6 @@ board/freescale/ls1043ardb/ls1043avnprdb_rcw_emmc_nand.cfg
+ #define CONFIG_ENV_IS_IN_SPI_FLASH
+ #define CONFIG_ENV_OFFSET		0x300000	/* 3MB */
+ #define CONFIG_ENV_SECT_SIZE		0x40000		/* 256KB */
+-#define CONFIG_SPI_FLASH_BAR
+ 
+ #define CONFIG_SYS_QE_FW_IN_SPIFLASH
+ #define CONFIG_ENV_SPI_BUS		0
+-- 
+2.17.1
+

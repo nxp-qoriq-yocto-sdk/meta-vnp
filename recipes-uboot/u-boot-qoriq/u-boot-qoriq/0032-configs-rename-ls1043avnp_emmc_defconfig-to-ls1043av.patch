@@ -1,0 +1,22 @@
+From d602fda39cfea524e93c365015b68ce4509f5268 Mon Sep 17 00:00:00 2001
+From: Calvin Johnson <calvin.johnson@nxp.com>
+Date: Wed, 8 May 2019 12:18:46 +0530
+Subject: [PATCH 32/40] configs: rename ls1043avnp_emmc_defconfig to
+ ls1043avnprdb_emmc_defconfig
+
+Rename ls1043avnp_emmc_defconfig to ls1043avnprdb_emmc_defconfig
+as the platform is called vnprdb and not vnp.
+
+Signed-off-by: Calvin Johnson <calvin.johnson@nxp.com>
+---
+ .../{ls1043avnp_emmc_defconfig => ls1043avnprdb_emmc_defconfig}   | 0
+ 1 file changed, 0 insertions(+), 0 deletions(-)
+ rename configs/{ls1043avnp_emmc_defconfig => ls1043avnprdb_emmc_defconfig} (100%)
+
+diff --git a/configs/ls1043avnp_emmc_defconfig b/configs/ls1043avnprdb_emmc_defconfig
+similarity index 100%
+rename from configs/ls1043avnp_emmc_defconfig
+rename to configs/ls1043avnprdb_emmc_defconfig
+-- 
+2.17.1
+

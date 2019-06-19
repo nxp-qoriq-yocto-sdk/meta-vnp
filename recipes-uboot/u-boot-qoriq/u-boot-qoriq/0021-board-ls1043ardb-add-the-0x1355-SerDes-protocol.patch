@@ -1,0 +1,43 @@
+From d42f640ab6c10c620b9e932e010f6df98d91012b Mon Sep 17 00:00:00 2001
+From: Camelia Groza <camelia.groza@nxp.com>
+Date: Fri, 5 Apr 2019 11:27:52 +0300
+Subject: [PATCH 21/40] board: ls1043ardb: add the 0x1355 SerDes protocol
+
+The 0x1355 protocol does not support QSGMII interfaces
+
+Signed-off-by: Camelia Groza <camelia.groza@nxp.com>
+Signed-off-by: Calvin Johnson <calvin.johnson@nxp.com>
+---
+ board/freescale/ls1043ardb/eth.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/board/freescale/ls1043ardb/eth.c b/board/freescale/ls1043ardb/eth.c
+index 7f210ee529..00053ef0db 100644
+--- a/board/freescale/ls1043ardb/eth.c
++++ b/board/freescale/ls1043ardb/eth.c
+@@ -42,11 +42,11 @@ int board_eth_init(bd_t *bis)
+ 	/* Register the 10G MDIO bus */
+ 	fm_memac_mdio_init(bis, &tgec_mdio_info);
+ 
+-#ifndef CONFIG_TARGET_LS1043ADCM
+ 	/* Set the two on-board RGMII PHY address */
+ 	fm_info_set_phy_address(FM1_DTSEC3, RGMII_PHY1_ADDR);
+ 	fm_info_set_phy_address(FM1_DTSEC4, RGMII_PHY2_ADDR);
+ 
++#if !defined(CONFIG_TARGET_LS1043ADCM) && !defined(CONFIG_TARGET_LS1043AVNPRDB)
+ 	/* QSGMII on lane B, MAC 1/2/5/6 */
+ 	fm_info_set_phy_address(FM1_DTSEC1, QSGMII_PORT1_PHY_ADDR);
+ 	fm_info_set_phy_address(FM1_DTSEC2, QSGMII_PORT2_PHY_ADDR);
+@@ -57,6 +57,9 @@ int board_eth_init(bd_t *bis)
+ 	switch (srds_s1) {
+ #ifdef CONFIG_TARGET_LS1043ADCM
+ 	case 0x3560:
++#endif
++#ifdef CONFIG_TARGET_LS1043AVNPRDB
++	case 0x1355:
+ #endif
+ 	case 0x1455:
+ 		break;
+-- 
+2.17.1
+

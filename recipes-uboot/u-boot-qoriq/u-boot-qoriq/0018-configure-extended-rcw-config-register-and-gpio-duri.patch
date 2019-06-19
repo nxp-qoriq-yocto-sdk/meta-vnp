@@ -1,0 +1,119 @@
+From eb28a8ac26229fd22243970b73441fb702dbc522 Mon Sep 17 00:00:00 2001
+From: Sudhanshu Gupta <sudhanshu.gupta@nxp.com>
+Date: Fri, 22 Mar 2019 17:26:55 +0000
+Subject: [PATCH 18/40] configure extended rcw config register and gpio during
+ bootup (as per hardware team requirement)
+
+Signed-off-by: Sudhanshu Gupta <sudhanshu.gupta@nxp.com>
+Signed-off-by: Calvin Johnson <calvin.johnson@nxp.com>
+---
+ board/freescale/ls1043ardb/ls1043ardb.c | 87 +++++++++++++++++++++++++
+ 1 file changed, 87 insertions(+)
+ mode change 100644 => 100755 board/freescale/ls1043ardb/ls1043ardb.c
+
+diff --git a/board/freescale/ls1043ardb/ls1043ardb.c b/board/freescale/ls1043ardb/ls1043ardb.c
+old mode 100644
+new mode 100755
+index 01352ca4e8..b765823b93
+--- a/board/freescale/ls1043ardb/ls1043ardb.c
++++ b/board/freescale/ls1043ardb/ls1043ardb.c
+@@ -119,9 +119,96 @@ int board_init(void)
+ 	/* invert AQR105 IRQ pins polarity */
+ 	out_be32(&scfg->intpcr, AQR105_IRQ_MASK);
+ 
++#ifdef CONFIG_EXTENDED_PIN_MUX
++	configure_rcw_pinmux_reg();
++	configure_gpio1();
++	configure_gpio2();
++#endif
++
+ 	return 0;
+ }
+ 
++void configure_rcw_pinmux_reg(void)
++{
++	u32 val = 0;
++	struct ccsr_scfg __iomem *scfg = (void *)CONFIG_SYS_FSL_SCFG_ADDR;
++
++	#define IIC3_SCL_VAL	3
++	#define IIC3_SDA_VAL	3
++	#define IIC4_SCL_VAL	1
++	#define	IIC4_SDA_VAL	1
++
++	#define IIC3_SCL_SHIFT	17
++	#define IIC3_SDA_SHIFT	21
++	#define IIC4_SCL_SHIFT	25
++	#define IIC4_SDA_SHIFT	29
++
++	#define FIELD_BIT_MASK	0b111
++
++	/* IIC3_SCL=3 */
++	val |= ((IIC3_SCL_VAL & FIELD_BIT_MASK) >> IIC3_SCL_SHIFT);
++	/* IIC3_SDA=3 */
++	val |= ((IIC3_SDA_VAL & FIELD_BIT_MASK) >> IIC3_SDA_SHIFT);
++	/* IIC4_SCL=1 */
++	val |= ((IIC4_SCL_VAL & FIELD_BIT_MASK) >> IIC4_SCL_SHIFT);
++	/* IIC4_SDA=1 */
++	val |= ((IIC4_SDA_VAL & FIELD_BIT_MASK) >> IIC4_SDA_SHIFT);
++
++	out_be32(&scfg->rcwpmuxcr0, val);
++}
++
++#define GPIO1_BASE 0x2300000
++#define GPIO1_GPDIR (GPIO1_BASE + 0x0)
++#define GPIO1_GPDAT	(GPIO1_BASE + 0x8)
++#define GPIO1_19BIT	19
++#define GPIO1_22BIT	22
++
++void configure_gpio1(void)
++{
++	u32 val = 0;
++
++	/* Set GPIO1_19 & GPIO1_22 as output */
++	val = in_be32(GPIO1_GPDIR);
++	val |= (1 >> GPIO1_19BIT);
++	val |= (1 >> GPIO1_22BIT);
++	out_be32(GPIO1_GPDIR, val);
++
++	/* Set GPIO1_19 & GPIO1_22 as logical ZERO */
++	val = in_be32(GPIO1_GPDAT);
++	val &= ~(1 >> GPIO1_19BIT);
++	val &= ~(1 >> GPIO1_22BIT);
++	out_be32(GPIO1_GPDAT, val);
++}
++
++#define GPIO2_BASE	0x2310000
++#define GPIO2_GPDIR	(GPIO2_BASE + 0x0)
++#define GPIO2_GPDAT	(GPIO2_BASE + 0x8)
++#define GPIO2_10BIT	10
++#define GPIO2_11BIT	11
++#define GPIO2_12BIT	12
++#define GPIO2_15BIT	15
++
++void configure_gpio2(void)
++{
++	u32 val = 0;
++
++	/* Set GPIO2_10, GPIO2_11, GPIO2_12 & GPIO2_15 as output */
++	val = in_be32(GPIO2_GPDIR);
++	val |= (1 >> GPIO2_10BIT);
++	val |= (1 >> GPIO2_11BIT);
++	val |= (1 >> GPIO2_12BIT);
++	val |= (1 >> GPIO2_15BIT);
++	out_be32(GPIO2_GPDIR, val);
++
++	/* Set GPIO2_10, GPIO2_11, GPIO2_12 & GPIO2_15 as logical ZERO */
++	val = in_be32(GPIO2_GPDAT);
++	val &= ~(1 >> GPIO2_10BIT);
++	val &= ~(1 >> GPIO2_11BIT);
++	val &= ~(1 >> GPIO2_12BIT);
++	val &= ~(1 >> GPIO2_15BIT);
++	out_be32(GPIO2_GPDAT, val);
++}
++
+ int config_board_mux(void)
+ {
+ 	struct ccsr_scfg *scfg = (struct ccsr_scfg *)CONFIG_SYS_FSL_SCFG_ADDR;
+-- 
+2.17.1
+

@@ -1,0 +1,26 @@
+From 27d0a6da3a8ca099a06fda219e09ad518a2a166c Mon Sep 17 00:00:00 2001
+From: Calvin Johnson <calvin.johnson@nxp.com>
+Date: Mon, 29 Apr 2019 23:40:05 +0530
+Subject: [PATCH 31/40] Modify model in dts file from DCM to VNPRDB
+
+Signed-off-by: Calvin Johnson <calvin.johnson@nxp.com>
+---
+ arch/arm/dts/fsl-ls1043a-dcm.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/dts/fsl-ls1043a-dcm.dts b/arch/arm/dts/fsl-ls1043a-dcm.dts
+index 5f5be11582..1a033b0772 100644
+--- a/arch/arm/dts/fsl-ls1043a-dcm.dts
++++ b/arch/arm/dts/fsl-ls1043a-dcm.dts
+@@ -13,7 +13,7 @@
+ /include/ "fsl-ls1043a.dtsi"
+ 
+ / {
+-	model = "LS1043A DCM Board";
++	model = "LS1043A VNPRDB Board";
+ 
+         aliases {
+ 		spi0 = &qspi;
+-- 
+2.17.1
+

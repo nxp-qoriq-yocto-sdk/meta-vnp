@@ -1,0 +1,92 @@
+From bd4e162a5928d362a7d9d526b6175f1a7e241706 Mon Sep 17 00:00:00 2001
+From: Calvin Johnson <calvin.johnson@nxp.com>
+Date: Mon, 29 Apr 2019 23:25:11 +0530
+Subject: [PATCH 29/40] configs: enable proper qspi in dts and config file
+
+Signed-off-by: Calvin Johnson <calvin.johnson@nxp.com>
+---
+ arch/arm/dts/fsl-ls1043a-dcm.dts |  2 +-
+ include/configs/ls1043avnprdb.h  | 38 ++++++++++++++++++++++++--------
+ 2 files changed, 30 insertions(+), 10 deletions(-)
+
+diff --git a/arch/arm/dts/fsl-ls1043a-dcm.dts b/arch/arm/dts/fsl-ls1043a-dcm.dts
+index 481713a4a9..5f5be11582 100644
+--- a/arch/arm/dts/fsl-ls1043a-dcm.dts
++++ b/arch/arm/dts/fsl-ls1043a-dcm.dts
+@@ -28,7 +28,7 @@
+        bus-num = <0>;
+        status = "okay";
+ 
+-       qflash0: s25fl128s@0 {
++       qflash0: s25fs512s@0 {
+                #address-cells = <1>;
+                #size-cells = <1>;
+                compatible = "spi-flash";
+diff --git a/include/configs/ls1043avnprdb.h b/include/configs/ls1043avnprdb.h
+index 0dc07b7196..5717902148 100755
+--- a/include/configs/ls1043avnprdb.h
++++ b/include/configs/ls1043avnprdb.h
+@@ -56,14 +56,6 @@
+ #define CONFIG_SYS_MMCSD_RAW_MODE_ARGS_SECTORS	30
+ #endif
+ 
+-/* QSPI */
+-#ifndef SPL_NO_QSPI
+-#ifdef CONFIG_FSL_QSPI
+-#define FSL_QSPI_FLASH_SIZE             SZ_128M
+-#define FSL_QSPI_FLASH_NUM              2
+-#endif
+-#endif
+-
+ /*
+  * NOR Flash Definitions
+  */
+@@ -260,9 +252,31 @@
+ #define SYS_NO_FLASH
+ #undef CONFIG_CMD_IMLS
+ #define CONFIG_ENV_IS_IN_SPI_FLASH
+-#define CONFIG_ENV_SIZE			0x2000		/* 8KB */
+ #define CONFIG_ENV_OFFSET		0x300000	/* 3MB */
+ #define CONFIG_ENV_SECT_SIZE		0x40000		/* 256KB */
++#define CONFIG_SPI_FLASH_BAR
++
++#define CONFIG_SYS_QE_FW_IN_SPIFLASH
++#define CONFIG_ENV_SPI_BUS		0
++#define CONFIG_ENV_SPI_CS		0
++#define CONFIG_ENV_SPI_MAX_HZ		1000000
++#define CONFIG_ENV_SPI_MODE		0x03
++#define CONFIG_SPI_FLASH_SPANSION
++#define CONFIG_FSL_SPI_INTERFACE
++#define CONFIG_SF_DATAFLASH
++
++#define QSPI0_AMBA_BASE		0x40000000
++
++#define FSL_QSPI_FLASH_SIZE		SZ_64M
++#define FSL_QSPI_FLASH_NUM		2
++
++/*
++ * Environment
++ */
++#define CONFIG_ENV_OVERWRITE
++
++#define CONFIG_ENV_SIZE			0x40000          /* 256KB */
++
+ #else
+ #define CONFIG_ENV_ADDR			(CONFIG_SYS_FLASH_BASE + 0x300000)
+ #define CONFIG_ENV_SECT_SIZE		0x20000
+@@ -273,6 +287,12 @@
+ #ifndef SPL_NO_FMAN
+ #define AQR105_IRQ_MASK			0x40000000
+ 
++
++/* FMan fireware Pre-load address */
++#define CONFIG_SYS_QE_FW_IN_SPIFLASH
++#define CONFIG_SYS_QE_FW_ADDR		0x940000
++
++
+ #ifdef CONFIG_NET
+ #define CONFIG_PHY_VITESSE
+ #define CONFIG_PHY_REALTEK
+-- 
+2.17.1
+

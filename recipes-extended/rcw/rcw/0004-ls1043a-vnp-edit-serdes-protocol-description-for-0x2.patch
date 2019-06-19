@@ -1,0 +1,73 @@
+From 6648a729b1e569a915f8c4f64200fd7171c91bf8 Mon Sep 17 00:00:00 2001
+From: Sudhanshu Gupta <sudhanshu.gupta@nxp.com>
+Date: Wed, 20 Mar 2019 15:10:34 +0000
+Subject: [PATCH 4/7] ls1043a: vnp: edit serdes protocol description for
+ 0x2355, 0x3335
+
+Signed-off-by: Sudhanshu Gupta <sudhanshu.gupta@nxp.com>
+Signed-off-by: Calvin Johnson <calvin.johnson@nxp.com>
+---
+ ls1043ardb/RR_SPPP_2355/rcw_1600_qspiboot.rcw | 11 +++++------
+ ls1043ardb/RR_SPPP_3335/rcw_1600_qspiboot.rcw | 10 +++++-----
+ 2 files changed, 10 insertions(+), 11 deletions(-)
+
+diff --git a/ls1043ardb/RR_SPPP_2355/rcw_1600_qspiboot.rcw b/ls1043ardb/RR_SPPP_2355/rcw_1600_qspiboot.rcw
+index 8295dc8..1df1397 100755
+--- a/ls1043ardb/RR_SPPP_2355/rcw_1600_qspiboot.rcw
++++ b/ls1043ardb/RR_SPPP_2355/rcw_1600_qspiboot.rcw
+@@ -1,7 +1,7 @@
+ /*
+  * LS1043ARDB RCW for SerDes Protocol 0x2355
+  *
+- * 15G configuration -- RGMII + 3 PCIE
++ * 13.5G configuration -- 2 SGMII + 2 PCIE
+  *
+  * Frequencies:
+  *
+@@ -17,11 +17,10 @@
+  * PCIE		-- 100 MHz (5G)
+  * eSDHC	-- 1000 MHz (CGA2 /1)
+  *
+- * Serdes Lanes vs Slot information
+- * A SGMII(M9)	: on board PHY chip
+- * B SGMII(M2)	: on board PHY chip
+- * C PCIe2		: mini PCIe slot
+- * D PCIe3		: PCIe slot
++ * A SGMII(M9)	: on board PHY chip (2.5G)
++ * B SGMII(M2)	: on board PHY chip (1G)
++ * C PCIe2	: mini PCIe slot (5G max)
++ * D PCIe3	: PCIe slot (5G max)
+  *
+  * Serdes configuration
+  * SRDS_PRTCL_S1	: 0x2355
+diff --git a/ls1043ardb/RR_SPPP_3335/rcw_1600_qspiboot.rcw b/ls1043ardb/RR_SPPP_3335/rcw_1600_qspiboot.rcw
+index 99abeff..4782969 100755
+--- a/ls1043ardb/RR_SPPP_3335/rcw_1600_qspiboot.rcw
++++ b/ls1043ardb/RR_SPPP_3335/rcw_1600_qspiboot.rcw
+@@ -1,7 +1,7 @@
+ /*
+  * LS1043ARDB RCW for SerDes Protocol 0x3335
+  *
+- * 15G configuration -- RGMII + 3 PCIE
++ * 8G configuration -- 3 SGMII + 1 PCIE
+  *
+  * Frequencies:
+  *
+@@ -18,10 +18,10 @@
+  * eSDHC	-- 1000 MHz (CGA2 /1)
+  *
+  * Serdes Lanes vs Slot information
+- * A SGMII(M9)	: on board PHY chip
+- * B SGMII(M2)	: on board PHY chip
+- * C SGMII(M5)  : on board PHY chip
+- * D PCIe3		: PCIe slot
++ * A SGMII(M9)	: on board PHY chip (1G)
++ * B SGMII(M2)	: on board PHY chip (1G)
++ * C SGMII(M5)	: on board PHY chip (1G)
++ * D PCIe3	: PCIe slot (5G max) 
+  *
+  * Serdes configuration
+  * SRDS_PRTCL_S1	: 0x3335
+-- 
+2.17.1
+

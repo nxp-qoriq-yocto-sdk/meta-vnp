@@ -19,5 +19,30 @@ SRC_URI_append_ls1043avnpevb += " \
 	file://0016-ls1043adcm-Enable-saveenv.patch \
 "
 
-
-
+SRC_URI_append_ls1043avnprdb += " \
+        file://0017-board-ls1043a-Add-LS1043AVNPRDB-board-support.patch \
+        file://0018-configure-extended-rcw-config-register-and-gpio-duri.patch \
+        file://0019-ls1043avnprdb-Add-ddr-raw-timings-support.patch \
+        file://0020-Add-EMMC-Boot-support-for-VNP-board.patch \
+        file://0021-board-ls1043ardb-add-the-0x1355-SerDes-protocol.patch \
+        file://0022-ls1043avnprdb-enable-the-MICREL-KSZ9031RNX-PHY-drive.patch \
+        file://0023-ls1043avnprdb-remove-the-QSGMII-PHY-addresses.patch \
+        file://0024-ls1043avnprdb-remove-fixed-PHY-config.patch \
+        file://0025-ls1043a-common.h-required-for-usb-boot.patch \
+        file://0026-net-fm-extend-SGMII-configs-of-DCM-to-VNPRDB.patch \
+        file://0027-drivers-spi-backport-spi-driver-changes-for-s25fs512.patch \
+        file://0028-configs-rename-ls1043avnp_rdb_defconfig-to-ls1043avn.patch \
+        file://0029-configs-enable-proper-qspi-in-dts-and-config-file.patch \
+        file://0030-configs-update-ls1043avnprdb.h-for-available-PHYs.patch \
+        file://0031-Modify-model-in-dts-file-from-DCM-to-VNPRDB.patch \
+        file://0032-configs-rename-ls1043avnp_emmc_defconfig-to-ls1043av.patch \
+        file://0033-armv8-ls1043ardb-rcw-add-rcw-for-emmc-and-nand.patch \
+        file://0034-configs-ls1043avnprdb-Support-eMMC-and-NAND-boot.patch \
+        file://0035-configs-ls1043avnprdb-Update-EEPROM-config.patch \
+        file://0036-armv8-ls1043a-change-SoC-device-ID-to-detect-23-x-23.patch \
+        file://0037-board-ls1043avnprdb-print-board-revision.patch \
+        file://0038-dts-ls1043avnprdb-cosmetic-change.patch \
+        file://0039-boards-ls1043avnprdb-configure-gpios.patch \
+        file://0040-configs-ls1043avnprdb-disable-CONFIG_SPI_FLASH_BAR.patch \
+        file://0041-enabling-saveenv-for-QSPI-flash.patch \
+"

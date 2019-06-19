@@ -13,13 +13,13 @@ SRCREV = "d8eb8cca262ee3a3080a02782aa54062691bd1be"
 S = "${WORKDIR}/git"
 
 CFLAGS += "-Wno-error -DLS1043 -DFLOW_STATS -DWIFI_ENABLE -DAUTO_BRIDGE -DIPSEC_SUPPORT_DISABLED"
-CFLAGS += "-I${TMPDIR}/sysroots-components/ls1043avnpevb/libcli/usr/include"
-CFLAGS += "-I${TMPDIR}/work/ls1043avnpevb-fsl-linux/fci/1.0-r0/git/lib/include"
+CFLAGS += "-I${TMPDIR}/sysroots-components/${MACHINE}/libcli/usr/include"
+CFLAGS += "-I${TMPDIR}/work/${MACHINE}-fsl-linux/fci/1.0-r0/git/lib/include"
 CFLAGS += "-I${TMPDIR}/sysroots-components/aarch64/libpcap/usr/include"
 CFLAGS += "-I${TMPDIR}/work-shared/${MACHINE}/kernel-source/include/uapi/linux/netfilter"
-CFLAGS += "-I${TMPDIR}/work/ls1043avnpevb-fsl-linux/kernel-module-ask-auto-bridge/1.0-r0/git/include"
+CFLAGS += "-I${TMPDIR}/work/${MACHINE}-fsl-linux/kernel-module-ask-auto-bridge/1.0-r0/git/include"
 
-LDFLAGS += "-L${TMPDIR}/work/ls1043avnpevb-fsl-linux/cmm/1.0-r0/build/src/.libs"
+LDFLAGS += "-L${TMPDIR}/work/${MACHINE}-fsl-linux/cmm/1.0-r0/build/src/.libs"
 
 EXTRA_OEMAKE = "CC='${CC}' LD='${CCLD}' V=1 ARCH=${TARGET_ARCH} CROSS_COMPILE=${TARGET_PREFIX} CFLAGS='${CFLAGS} ${LDFLAGS}'"
 

@@ -8,7 +8,7 @@ SRC_URI = "git://source.codeaurora.org/external/qoriq/qoriq-yocto-sdk/rtl8812au;
 SRCREV = "bd71ad1cb26fd16f53eb0da932cb50e4f5f69e0f"
 
 S = "${WORKDIR}/git"
-EXTRA_OEMAKE ="CROSS_COMPILE=${TARGET_PREFIX} KSRC=${TMPDIR}/work/ls1043avnpevb-fsl-linux/linux-qoriq/4.14-r0/build ARCH=arm64"
+EXTRA_OEMAKE ="CROSS_COMPILE=${TARGET_PREFIX} KSRC=${TMPDIR}/work/${MACHINE}-fsl-linux/linux-qoriq/4.14-r0/build ARCH=arm64"
 
 inherit module
 

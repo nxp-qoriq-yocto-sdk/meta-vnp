@@ -1,0 +1,48 @@
+From 3772fb10865ee09b35ec33cf0a0642c99da9b7a8 Mon Sep 17 00:00:00 2001
+From: Sudhanshu Gupta <sudhanshu.gupta@nxp.com>
+Date: Mon, 25 Mar 2019 13:30:48 +0000
+Subject: [PATCH 5/7] adaptation of rcw serdes 0x1355 for vnp platform
+
+Signed-off-by: Harninder Rai <harninder.rai@nxp.com>
+Signed-off-by: Calvin Johnson <calvin.johnson@nxp.com>
+---
+ ls1043ardb/RR_SPPP_1355/rcw_1600_qspiboot.rcw | 15 +++++++++------
+ 1 file changed, 9 insertions(+), 6 deletions(-)
+
+diff --git a/ls1043ardb/RR_SPPP_1355/rcw_1600_qspiboot.rcw b/ls1043ardb/RR_SPPP_1355/rcw_1600_qspiboot.rcw
+index 8f95d67..a0a89b3 100755
+--- a/ls1043ardb/RR_SPPP_1355/rcw_1600_qspiboot.rcw
++++ b/ls1043ardb/RR_SPPP_1355/rcw_1600_qspiboot.rcw
+@@ -49,20 +49,23 @@ DDR_FDBK_MULT=2
+ DDR_REFCLK_SEL=1
+ PBI_SRC=4
+ IFC_MODE=37
+-SRDS_PLL_PD_S1=1
++SRDS_PLL_PD_S1=0
+ HWA_CGA_M1_CLK_SEL=6
+ DRAM_LAT=1
+ SYS_PLL_SPD=1
+-UART_BASE=7
++UART_BASE=3
++SPI_BASE=1
+ IFC_GRP_A_EXT=1
+-IFC_GRP_D_EXT=1
+-IFC_GRP_E1_EXT=1
++IFC_GRP_D_EXT=0
++IFC_GRP_E1_EXT=0
+ IFC_GRP_F_EXT=1
+ IRQ_OUT=1
++IFC_GRP_E1_BASE=1
++IFC_GRP_D_BASE=1
+ TVDD_VSEL=0
+ DVDD_VSEL=2
+-EVDD_VSEL=2
+-IIC2_EXT=0
++EVDD_VSEL=0
++IIC2_EXT=2
+ SYSCLK_FREQ=600
+ HWA_CGA_M2_CLK_SEL=1
+ 
+-- 
+2.17.1
+

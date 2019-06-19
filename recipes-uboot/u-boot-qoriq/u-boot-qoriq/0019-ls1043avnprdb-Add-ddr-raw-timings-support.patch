@@ -1,0 +1,102 @@
+From ed04ed8e38cbc0761d14cc71f54ae73be5bd5fa1 Mon Sep 17 00:00:00 2001
+From: Pankit Garg <pankit.garg@nxp.com>
+Date: Mon, 25 Mar 2019 18:26:57 +0530
+Subject: [PATCH 19/40] ls1043avnprdb: Add ddr raw timings support
+
+Signed-off-by: Pankit Garg <pankit.garg@nxp.com>
+Reviewed-by: Rajesh Bhagat <rajesh.bhagat@nxp.com>
+Signed-off-by: Calvin Johnson <calvin.johnson@nxp.com>
+---
+ board/freescale/ls1043ardb/ddr.c | 39 ++++++++++++++++++++++++++++++--
+ board/freescale/ls1043ardb/ddr.h |  2 ++
+ configs/ls1043avnp_rdb_defconfig |  1 +
+ 3 files changed, 40 insertions(+), 2 deletions(-)
+
+diff --git a/board/freescale/ls1043ardb/ddr.c b/board/freescale/ls1043ardb/ddr.c
+index fc0c1f6f82..98bc8f7da4 100644
+--- a/board/freescale/ls1043ardb/ddr.c
++++ b/board/freescale/ls1043ardb/ddr.c
+@@ -94,14 +94,48 @@ found:
+ 
+ 	/* optimize cpo for erratum A-009942 */
+ 	popts->cpo_sample = 0x46;
+-
++#ifdef CONFIG_TARGET_LS1043AVNPRDB
++	popts->ddr_cdr1 = DDR_CDR1_DHC_EN | DDR_CDR1_ODT(DDR_CDR_ODT_75ohm);
++	popts->ddr_cdr2 = DDR_CDR2_ODT(DDR_CDR_ODT_75ohm);
++#else
+ 	popts->ddr_cdr1 = DDR_CDR1_DHC_EN | DDR_CDR1_ODT(DDR_CDR_ODT_80ohm);
+ 	popts->ddr_cdr2 = DDR_CDR2_ODT(DDR_CDR_ODT_80ohm) |
+ 			  DDR_CDR2_VREF_OVRD(70);	/* Vref = 70% */
++#endif
+ }
+ 
+-/* DDR model number: MT40A512M8HX-093E */
+ #ifdef CONFIG_SYS_DDR_RAW_TIMING
++#ifdef CONFIG_TARGET_LS1043AVNPRDB
++dimm_params_t ddr_raw_timing = {
++        .n_ranks = 1,
++        .rank_density = 2147483648u,
++        .capacity = 2147483648u,
++        .primary_sdram_width = 32,
++        .ec_sdram_width = 4,
++        .registered_dimm = 0,
++        .mirrored_dimm = 0,
++        .n_row_addr = 16,
++        .n_col_addr = 10,
++        .n_banks_per_sdram_device = 8,
++        .edc_config = 2,
++        .burst_lengths_bitmask = 0x0c,
++        .tckmin_x_ps = 1250,
++        .caslat_x = 0x00007FC0,  /* 6-14 */
++        .taa_ps = 13750,
++        .twr_ps = 15000,
++        .trcd_ps = 13750,
++        .trrd_ps = 6000,
++        .trp_ps = 13750,
++        .tras_ps = 35000,
++        .trc_ps = 48750,
++        .trfc_ps = 260000,
++        .twtr_ps = 7500,
++        .trtp_ps = 7500,
++        .refresh_rate_ps = 7800000,
++        .tfaw_ps = 30000,
++};
++#else
++/* DDR model number: MT40A512M8HX-093E */
+ dimm_params_t ddr_raw_timing = {
+ 	.n_ranks = 1,
+ 	.rank_density = 2147483648u,
+@@ -153,6 +187,7 @@ dimm_params_t ddr_raw_timing = {
+ 	.dq_mapping[17] = 0x0,
+ 	.dq_mapping_ors = 0,
+ };
++#endif
+ 
+ int fsl_ddr_get_dimm_params(dimm_params_t *pdimm,
+ 			    unsigned int controller_number,
+diff --git a/board/freescale/ls1043ardb/ddr.h b/board/freescale/ls1043ardb/ddr.h
+index 6bc0eb67cc..07b6ad184e 100644
+--- a/board/freescale/ls1043ardb/ddr.h
++++ b/board/freescale/ls1043ardb/ddr.h
+@@ -37,6 +37,8 @@ static const struct board_specific_parameters udimm0[] = {
+ 	{1,  1666, 0, 12,     7, 0x07090800, 0x00000000,},
+ 	{1,  1900, 0, 12,     7, 0x07090800, 0x00000000,},
+ 	{1,  2200, 0, 12,     7, 0x07090800, 0x00000000,},
++#else
++	{1,  1666, 0, 12,     7, 0x07090800, 0x00000000,},
+ #endif
+ 	{}
+ };
+diff --git a/configs/ls1043avnp_rdb_defconfig b/configs/ls1043avnp_rdb_defconfig
+index 6e893d679a..4f05d8651d 100644
+--- a/configs/ls1043avnp_rdb_defconfig
++++ b/configs/ls1043avnp_rdb_defconfig
+@@ -38,3 +38,4 @@ CONFIG_DM_USB=y
+ CONFIG_USB_XHCI_HCD=y
+ CONFIG_USB_XHCI_DWC3=y
+ CONFIG_USB_STORAGE=y
++CONFIG_SYS_FSL_DDR3=y
+-- 
+2.17.1
+

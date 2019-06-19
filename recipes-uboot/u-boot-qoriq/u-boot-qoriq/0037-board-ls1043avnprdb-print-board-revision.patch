@@ -1,0 +1,107 @@
+From 6c6718965a86501ed5d2fc8f7cb7bae35767f87b Mon Sep 17 00:00:00 2001
+From: Calvin Johnson <calvin.johnson@nxp.com>
+Date: Thu, 9 May 2019 19:52:34 +0530
+Subject: [PATCH 37/40] board: ls1043avnprdb: print board revision
+
+Determine LS1043AVNPRDB board revision from GPIO2_13
+and GPIO2_14 signals. Mapping of revisions to GPIO values
+are as below.
+
+board_rev[a:b] = [LS1043A_GPIO2_13:LS1043A_GPIO2_14]
+
+board_rev[a:b] = 00 Rev-A
+board_rev[a:b] = 01 Rev-B
+board_rev[a:b] = 10 Rev-C
+board_rev[a:b] = 11 Rev-D
+
+Signed-off-by: Calvin Johnson <calvin.johnson@nxp.com>
+---
+ board/freescale/ls1043ardb/ls1043ardb.c | 45 ++++++++++++++++++++++++-
+ include/configs/ls1043avnprdb.h         |  8 +++++
+ 2 files changed, 52 insertions(+), 1 deletion(-)
+
+diff --git a/board/freescale/ls1043ardb/ls1043ardb.c b/board/freescale/ls1043ardb/ls1043ardb.c
+index 493df85bb8..e5ad64bfc4 100755
+--- a/board/freescale/ls1043ardb/ls1043ardb.c
++++ b/board/freescale/ls1043ardb/ls1043ardb.c
+@@ -36,6 +36,18 @@ int board_early_init_f(void)
+ 
+ #ifndef CONFIG_SPL_BUILD
+ 
++#if defined(CONFIG_TARGET_LS1043AVNPRDB)
++static inline int get_board_version(void)
++{
++	uint32_t val;
++	struct ccsr_gpio *pgpio = (void *)(GPIO2_BASE_ADDR);
++
++	val = in_be32(&pgpio->gpdat) & BOARD_REV_MASK;/* Get GPIO2 13,14 */
++
++	return val >> BOARD_REV_SHIFT;
++}
++#endif
++
+ int checkboard(void)
+ {
+ #ifdef CONFIG_TARGET_LS1043ARDB
+@@ -75,7 +87,38 @@ int checkboard(void)
+ 	printf("SD1_CLK1 = %s, SD1_CLK2 = %s\n", freq[sd1refclk_sel], freq[0]);
+ 
+ #elif defined (CONFIG_TARGET_LS1043AVNPRDB)
+-	printf("Board: LS1043AVNPRDB\n");
++	printf("Board: LS1043AVNPRDB ");
++
++	int rev;
++	rev = get_board_version();
++	puts("Version");
++	switch (rev) {
++	case BOARD_REV_A:
++		puts(": RevA\n");
++		break;
++	case BOARD_REV_B:
++		puts(": RevB\n");
++		break;
++	case BOARD_REV_C:
++		puts(": RevC\n");
++		break;
++	case BOARD_REV_D:
++		puts(": RevD\n");
++		break;
++	default:
++		puts(": unknown\n");
++		break;
++	}
++
++	printf("Boot from ");
++#ifdef CONFIG_SD_BOOT
++	puts("SD\n");
++#elif defined(CONFIG_EMMC_BOOT)
++	puts("eMMC\n");
++#elif defined(CONFIG_QSPI_BOOT)
++	puts("QSPI\n");
++#endif
++
+ #else
+ 	printf("Board: LS1043ADCM\n");
+ #endif
+diff --git a/include/configs/ls1043avnprdb.h b/include/configs/ls1043avnprdb.h
+index 2b6d69cafc..de4a14b0fb 100755
+--- a/include/configs/ls1043avnprdb.h
++++ b/include/configs/ls1043avnprdb.h
+@@ -9,6 +9,14 @@
+ 
+ #include "ls1043a_common.h"
+ 
++/* Board Rev*/
++#define BOARD_REV_A			0x0
++#define BOARD_REV_B			0x1
++#define BOARD_REV_C			0x2
++#define BOARD_REV_D			0x3
++#define BOARD_REV_MASK			0x00060000
++#define BOARD_REV_SHIFT			17
++
+ #if defined(CONFIG_NAND_BOOT) || defined(CONFIG_EMMC_BOOT)
+ #define CONFIG_SYS_TEXT_BASE		0x82000000
+ #elif defined(CONFIG_QSPI_BOOT)
+-- 
+2.17.1
+

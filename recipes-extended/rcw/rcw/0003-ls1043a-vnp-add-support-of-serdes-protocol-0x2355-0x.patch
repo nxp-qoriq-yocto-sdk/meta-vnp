@@ -1,0 +1,203 @@
+From f2c033f885fea973d661967334418e0fd832864a Mon Sep 17 00:00:00 2001
+From: Sudhanshu Gupta <sudhanshu.gupta@nxp.com>
+Date: Tue, 19 Mar 2019 16:08:50 +0000
+Subject: [PATCH 3/7] ls1043a: vnp: add support of serdes protocol 0x2355,
+ 0x3335
+
+    Adds support for LS1043A VNP board QSPI boot.
+
+    Uses serdes protocol 0x2355, 0x3335.
+
+Signed-off-by: Calvin Johnson <calvin.johnson@nxp.com>
+---
+ ls1043ardb/RR_SPPP_2355/rcw_1600_qspiboot.rcw | 85 +++++++++++++++++++
+ ls1043ardb/RR_SPPP_3335/rcw_1600_qspiboot.rcw | 85 +++++++++++++++++++
+ 2 files changed, 170 insertions(+)
+ create mode 100755 ls1043ardb/RR_SPPP_2355/rcw_1600_qspiboot.rcw
+ create mode 100755 ls1043ardb/RR_SPPP_3335/rcw_1600_qspiboot.rcw
+
+diff --git a/ls1043ardb/RR_SPPP_2355/rcw_1600_qspiboot.rcw b/ls1043ardb/RR_SPPP_2355/rcw_1600_qspiboot.rcw
+new file mode 100755
+index 0000000..8295dc8
+--- /dev/null
++++ b/ls1043ardb/RR_SPPP_2355/rcw_1600_qspiboot.rcw
+@@ -0,0 +1,85 @@
++/*
++ * LS1043ARDB RCW for SerDes Protocol 0x2355
++ *
++ * 15G configuration -- RGMII + 3 PCIE
++ *
++ * Frequencies:
++ *
++ * Sys Clock: 100 MHz
++ * DDR_Refclock: 100 MHz
++ *
++ * Core		-- 1600 MHz (Mul 16)
++ * Platform	-- 400 MHz (Mul 4)
++ * DDR		-- 1600 MT/s (Mul 16)
++ * FMan		-- 500 MHz (CGA2 /2)
++ * XFI		-- 156.25 MHz (10.3125G)
++ * QSGMII	-- 100 MHz (5G)
++ * PCIE		-- 100 MHz (5G)
++ * eSDHC	-- 1000 MHz (CGA2 /1)
++ *
++ * Serdes Lanes vs Slot information
++ * A SGMII(M9)	: on board PHY chip
++ * B SGMII(M2)	: on board PHY chip
++ * C PCIe2		: mini PCIe slot
++ * D PCIe3		: PCIe slot
++ *
++ * Serdes configuration
++ * SRDS_PRTCL_S1	: 0x2355
++ * SRDS_PLL_REF_CLK_SEL_S1 :
++ *  SerDes 1, PLL1 : 1 - 156.25MHz for XFI
++ *  SerDes 1, PLL2 : 0 - 100MHz for QSGMII and PCIe
++ * SRDS_DIV_PEX		: 00 Can train up to a max rate of 5G
++ *
++ * DDR clock:
++ * DDR_REFCLK_SEL : 1 - DDRCLK pin provides the reference clock to the DDR PLL
++ *
++ */
++
++#include <../ls1043aqds/ls1043a.rcwi>
++
++SYS_PLL_RAT=4
++MEM_PLL_RAT=16
++CGA_PLL1_RAT=16
++CGA_PLL2_RAT=10
++SRDS_PRTCL_S1=9045
++FM1_MAC_RAT=1
++SRDS_PLL_REF_CLK_SEL_S1=0
++SRDS_DIV_PEX=1
++DDR_FDBK_MULT=2
++DDR_REFCLK_SEL=1
++PBI_SRC=4
++IFC_MODE=37
++SRDS_PLL_PD_S1=1
++HWA_CGA_M1_CLK_SEL=6
++DRAM_LAT=1
++SYS_PLL_SPD=1
++UART_BASE=7
++IFC_GRP_A_EXT=1
++IFC_GRP_D_EXT=1
++IFC_GRP_E1_EXT=1
++IFC_GRP_F_EXT=1
++IRQ_OUT=1
++TVDD_VSEL=0
++DVDD_VSEL=2
++EVDD_VSEL=2
++IIC2_EXT=0
++SYSCLK_FREQ=600
++HWA_CGA_M2_CLK_SEL=1
++
++.pbi
++// QSPI flash clock
++write 0x57015c, 0x40100000
++write 0x570600, 0x00000000
++write 0x570604, 0x40100000
++.end
++
++#include <../ls1043aqds/cci_barrier_disable.rcw>
++#include <../ls1043aqds/usb_phy_freq.rcw>
++#include <./uboot_address_qspi.rcw>
++#include <../ls1043aqds/dcsr_mbist.rcw>
++#include <../ls1043aqds/pex_gen3_link.rcw>
++
++.pbi
++// QSPI END_CFG 64 bit LE
++write 0x550000, 0x000f400c
++.end
+diff --git a/ls1043ardb/RR_SPPP_3335/rcw_1600_qspiboot.rcw b/ls1043ardb/RR_SPPP_3335/rcw_1600_qspiboot.rcw
+new file mode 100755
+index 0000000..99abeff
+--- /dev/null
++++ b/ls1043ardb/RR_SPPP_3335/rcw_1600_qspiboot.rcw
+@@ -0,0 +1,85 @@
++/*
++ * LS1043ARDB RCW for SerDes Protocol 0x3335
++ *
++ * 15G configuration -- RGMII + 3 PCIE
++ *
++ * Frequencies:
++ *
++ * Sys Clock: 100 MHz
++ * DDR_Refclock: 100 MHz
++ *
++ * Core		-- 1600 MHz (Mul 16)
++ * Platform	-- 400 MHz (Mul 4)
++ * DDR		-- 1600 MT/s (Mul 16)
++ * FMan		-- 500 MHz (CGA2 /2)
++ * XFI		-- 156.25 MHz (10.3125G)
++ * QSGMII	-- 100 MHz (5G)
++ * PCIE		-- 100 MHz (5G)
++ * eSDHC	-- 1000 MHz (CGA2 /1)
++ *
++ * Serdes Lanes vs Slot information
++ * A SGMII(M9)	: on board PHY chip
++ * B SGMII(M2)	: on board PHY chip
++ * C SGMII(M5)  : on board PHY chip
++ * D PCIe3		: PCIe slot
++ *
++ * Serdes configuration
++ * SRDS_PRTCL_S1	: 0x3335
++ * SRDS_PLL_REF_CLK_SEL_S1 :
++ *  SerDes 1, PLL1 : 1 - 156.25MHz for XFI
++ *  SerDes 1, PLL2 : 0 - 100MHz for QSGMII and PCIe
++ * SRDS_DIV_PEX		: 00 Can train up to a max rate of 5G
++ *
++ * DDR clock:
++ * DDR_REFCLK_SEL : 1 - DDRCLK pin provides the reference clock to the DDR PLL
++ *
++ */
++
++#include <../ls1043aqds/ls1043a.rcwi>
++
++SYS_PLL_RAT=4
++MEM_PLL_RAT=16
++CGA_PLL1_RAT=16
++CGA_PLL2_RAT=10
++SRDS_PRTCL_S1=13109
++FM1_MAC_RAT=1
++SRDS_PLL_REF_CLK_SEL_S1=0
++SRDS_DIV_PEX=1
++DDR_FDBK_MULT=2
++DDR_REFCLK_SEL=1
++PBI_SRC=4
++IFC_MODE=37
++SRDS_PLL_PD_S1=1
++HWA_CGA_M1_CLK_SEL=6
++DRAM_LAT=1
++SYS_PLL_SPD=1
++UART_BASE=7
++IFC_GRP_A_EXT=1
++IFC_GRP_D_EXT=1
++IFC_GRP_E1_EXT=1
++IFC_GRP_F_EXT=1
++IRQ_OUT=1
++TVDD_VSEL=0
++DVDD_VSEL=2
++EVDD_VSEL=2
++IIC2_EXT=0
++SYSCLK_FREQ=600
++HWA_CGA_M2_CLK_SEL=1
++
++.pbi
++// QSPI flash clock
++write 0x57015c, 0x40100000
++write 0x570600, 0x00000000
++write 0x570604, 0x40100000
++.end
++
++#include <../ls1043aqds/cci_barrier_disable.rcw>
++#include <../ls1043aqds/usb_phy_freq.rcw>
++#include <./uboot_address_qspi.rcw>
++#include <../ls1043aqds/dcsr_mbist.rcw>
++#include <../ls1043aqds/pex_gen3_link.rcw>
++
++.pbi
++// QSPI END_CFG 64 bit LE
++write 0x550000, 0x000f400c
++.end
+-- 
+2.17.1
+

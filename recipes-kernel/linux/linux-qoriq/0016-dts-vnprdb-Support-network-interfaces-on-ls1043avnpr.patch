@@ -1,0 +1,235 @@
+From 935c87dd3ffbcac5abc6d58f976a08c1f6dad3eb Mon Sep 17 00:00:00 2001
+From: Calvin Johnson <calvin.johnson@nxp.com>
+Date: Fri, 3 May 2019 23:31:56 +0530
+Subject: [PATCH 16/16] dts: vnprdb: Support network interfaces on
+ ls1043avnprdb
+
+-Add new dts files fsl-ls1043a-vnprdb-sdk.dts and fsl-ls1043a-vnprdb-usdpaa.dts
+-Disable unused MACs
+-Remove qsgmii_phys
+-Rename aqr105_phy to aqr107_phy
+
+Signed-off-by: Calvin Johnson <calvin.johnson@nxp.com>
+---
+ arch/arm64/boot/dts/freescale/Makefile        |   3 +
+ .../dts/freescale/fsl-ls1043a-vnprdb-sdk.dts  |  29 +++++
+ .../freescale/fsl-ls1043a-vnprdb-usdpaa.dts   | 113 ++++++++++++++++++
+ .../boot/dts/freescale/fsl-ls1043a-vnprdb.dts |  20 +---
+ 4 files changed, 147 insertions(+), 18 deletions(-)
+ create mode 100644 arch/arm64/boot/dts/freescale/fsl-ls1043a-vnprdb-sdk.dts
+ create mode 100644 arch/arm64/boot/dts/freescale/fsl-ls1043a-vnprdb-usdpaa.dts
+
+diff --git a/arch/arm64/boot/dts/freescale/Makefile b/arch/arm64/boot/dts/freescale/Makefile
+index 1b144bdd971c..17f42042a432 100644
+--- a/arch/arm64/boot/dts/freescale/Makefile
++++ b/arch/arm64/boot/dts/freescale/Makefile
+@@ -6,8 +6,11 @@ dtb-$(CONFIG_ARCH_LAYERSCAPE) += fsl-ls1012a-2g5rdb.dtb
+ dtb-$(CONFIG_ARCH_LAYERSCAPE) += fsl-ls1043a-qds.dtb
+ dtb-$(CONFIG_ARCH_LAYERSCAPE) += fsl-ls1043a-qds-sdk.dtb
+ dtb-$(CONFIG_ARCH_LAYERSCAPE) += fsl-ls1043a-rdb.dtb
++dtb-$(CONFIG_ARCH_LAYERSCAPE) += fsl-ls1043a-vnprdb.dtb
+ dtb-$(CONFIG_ARCH_LAYERSCAPE) += fsl-ls1043a-rdb-sdk.dtb
++dtb-$(CONFIG_ARCH_LAYERSCAPE) += fsl-ls1043a-vnprdb-sdk.dtb
+ dtb-$(CONFIG_ARCH_LAYERSCAPE) += fsl-ls1043a-rdb-usdpaa.dtb
++dtb-$(CONFIG_ARCH_LAYERSCAPE) += fsl-ls1043a-vnprdb-usdpaa.dtb
+ dtb-$(CONFIG_ARCH_LAYERSCAPE) += fsl-ls1043a-dgw.dtb
+ dtb-$(CONFIG_ARCH_LAYERSCAPE) += fsl-ls1043a-dgw-sdk.dtb
+ dtb-$(CONFIG_ARCH_LAYERSCAPE) += fsl-ls1043a-rgw.dtb
+diff --git a/arch/arm64/boot/dts/freescale/fsl-ls1043a-vnprdb-sdk.dts b/arch/arm64/boot/dts/freescale/fsl-ls1043a-vnprdb-sdk.dts
+new file mode 100644
+index 000000000000..7eeb057b910e
+--- /dev/null
++++ b/arch/arm64/boot/dts/freescale/fsl-ls1043a-vnprdb-sdk.dts
+@@ -0,0 +1,29 @@
++// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
++/*
++ * Copyright 2019 NXP
++ *
++ */
++
++#include "fsl-ls1043a-vnprdb.dts"
++
++&bman_fbpr {
++	compatible = "fsl,bman-fbpr";
++	alloc-ranges = <0 0 0x10000 0>;
++};
++&qman_fqd {
++	compatible = "fsl,qman-fqd";
++	alloc-ranges = <0 0 0x10000 0>;
++};
++&qman_pfdr {
++	compatible = "fsl,qman-pfdr";
++	alloc-ranges = <0 0 0x10000 0>;
++};
++
++&soc {
++#include "qoriq-dpaa-eth.dtsi"
++#include "qoriq-fman3-0-6oh.dtsi"
++};
++
++&fman0 {
++	compatible = "fsl,fman", "simple-bus";
++};
+diff --git a/arch/arm64/boot/dts/freescale/fsl-ls1043a-vnprdb-usdpaa.dts b/arch/arm64/boot/dts/freescale/fsl-ls1043a-vnprdb-usdpaa.dts
+new file mode 100644
+index 000000000000..c9621f19cd0b
+--- /dev/null
++++ b/arch/arm64/boot/dts/freescale/fsl-ls1043a-vnprdb-usdpaa.dts
+@@ -0,0 +1,113 @@
++// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
++/*
++ * Copyright 2019 NXP
++ *
++ */
++
++#include "fsl-ls1043a-vnprdb-sdk.dts"
++
++&soc {
++	bp7: buffer-pool@7 {
++		compatible = "fsl,p4080-bpool", "fsl,bpool";
++		fsl,bpid = <7>;
++		fsl,bpool-ethernet-cfg = <0 0 0 192 0 0xdeadbeef>;
++		fsl,bpool-thresholds = <0x400 0xc00 0x0 0x0>;
++	};
++
++	bp8: buffer-pool@8 {
++		compatible = "fsl,p4080-bpool", "fsl,bpool";
++		fsl,bpid = <8>;
++		fsl,bpool-ethernet-cfg = <0 0 0 576 0 0xabbaf00d>;
++		fsl,bpool-thresholds = <0x100 0x300 0x0 0x0>;
++	};
++
++	bp9: buffer-pool@9 {
++		compatible = "fsl,p4080-bpool", "fsl,bpool";
++		fsl,bpid = <9>;
++		fsl,bpool-ethernet-cfg = <0 0 0 2048 0 0xfeedabba>;
++		fsl,bpool-thresholds = <0x100 0x300 0x0 0x0>;
++	};
++
++	fsl,dpaa {
++		compatible = "fsl,ls1043a", "fsl,dpaa", "simple-bus";
++
++		ethernet@0 {
++			compatible = "fsl,dpa-ethernet-init";
++			fsl,bman-buffer-pools = <&bp7 &bp8 &bp9>;
++			fsl,qman-frame-queues-rx = <0x50 1 0x51 1>;
++			fsl,qman-frame-queues-tx = <0x70 1 0x71 1>;
++		};
++
++		ethernet@1 {
++			compatible = "fsl,dpa-ethernet-init";
++			fsl,bman-buffer-pools = <&bp7 &bp8 &bp9>;
++			fsl,qman-frame-queues-rx = <0x52 1 0x53 1>;
++			fsl,qman-frame-queues-tx = <0x72 1 0x73 1>;
++		};
++
++		ethernet@2 {
++			compatible = "fsl,dpa-ethernet-init";
++			fsl,bman-buffer-pools = <&bp7 &bp8 &bp9>;
++			fsl,qman-frame-queues-rx = <0x54 1 0x55 1>;
++			fsl,qman-frame-queues-tx = <0x74 1 0x75 1>;
++		};
++
++		ethernet@3 {
++			compatible = "fsl,dpa-ethernet-init";
++			fsl,bman-buffer-pools = <&bp7 &bp8 &bp9>;
++			fsl,qman-frame-queues-rx = <0x56 1 0x57 1>;
++			fsl,qman-frame-queues-tx = <0x76 1 0x77 1>;
++		};
++
++		ethernet@4 {
++			compatible = "fsl,dpa-ethernet-init";
++			fsl,bman-buffer-pools = <&bp7 &bp8 &bp9>;
++			fsl,qman-frame-queues-rx = <0x58 1 0x59 1>;
++			fsl,qman-frame-queues-tx = <0x78 1 0x79 1>;
++		};
++
++		ethernet@5 {
++			compatible = "fsl,dpa-ethernet-init";
++			fsl,bman-buffer-pools = <&bp7 &bp8 &bp9>;
++			fsl,qman-frame-queues-rx = <0x60 1 0x61 1>;
++			fsl,qman-frame-queues-tx = <0x80 1 0x81 1>;
++		};
++
++		ethernet@8 {
++			compatible = "fsl,dpa-ethernet-init";
++			fsl,bman-buffer-pools = <&bp7 &bp8 &bp9>;
++			fsl,qman-frame-queues-rx = <0x5c 1 0x5d 1>;
++			fsl,qman-frame-queues-tx = <0x7c 1 0x7d 1>;
++
++		};
++		dpa-fman0-oh@2 {
++			compatible = "fsl,dpa-oh";
++			/* Define frame queues for the OH port*/
++			/* <OH Rx error, OH Rx default> */
++			fsl,qman-frame-queues-oh = <0x5a 1 0x5b 1>;
++			fsl,fman-oh-port = <&fman0_oh2>;
++		};
++	};
++};
++/ {
++	reserved-memory {
++		#address-cells = <2>;
++		#size-cells = <2>;
++		ranges;
++
++		usdpaa_mem: usdpaa_mem {
++			compatible = "fsl,usdpaa-mem";
++			alloc-ranges = <0 0 0x10000 0>;
++			size = <0 0x10000000>;
++			alignment = <0 0x10000000>;
++		};
++	};
++};
++
++&fman0 {
++	fman0_oh2: port@83000 {
++		cell-index = <1>;
++		compatible = "fsl,fman-port-oh";
++		reg = <0x83000 0x1000>;
++	};
++};
+diff --git a/arch/arm64/boot/dts/freescale/fsl-ls1043a-vnprdb.dts b/arch/arm64/boot/dts/freescale/fsl-ls1043a-vnprdb.dts
+index 31f16997be4a..4da725f0b2e3 100644
+--- a/arch/arm64/boot/dts/freescale/fsl-ls1043a-vnprdb.dts
++++ b/arch/arm64/boot/dts/freescale/fsl-ls1043a-vnprdb.dts
+@@ -116,7 +116,7 @@
+ 	};
+ 
+ 	ethernet@f0000 { /* 10GEC1 */
+-	       fixed-link = <1 1 1000 0 0>;
++	       phy-handle = <&aqr107_phy>;
+ 	       phy-connection-type = "sgmii";
+ 	};
+ 
+@@ -128,26 +128,10 @@
+ 		rgmii_phy2: ethernet-phy@2 {
+ 			reg = <0x2>;
+ 		};
+-
+-		qsgmii_phy1: ethernet-phy@4 {
+-			reg = <0x4>;
+-		};
+-
+-		qsgmii_phy2: ethernet-phy@5 {
+-			reg = <0x5>;
+-		};
+-
+-		qsgmii_phy3: ethernet-phy@6 {
+-			reg = <0x6>;
+-		};
+-
+-		qsgmii_phy4: ethernet-phy@7 {
+-			reg = <0x7>;
+-		};
+ 	};
+ 
+ 	mdio@fd000 {
+-		aqr105_phy: ethernet-phy@1 {
++		aqr107_phy: ethernet-phy@1 {
+ 			compatible = "ethernet-phy-ieee802.3-c45";
+ 			interrupts = <0 132 4>;
+ 			reg = <0x1>;
+-- 
+2.17.1
+

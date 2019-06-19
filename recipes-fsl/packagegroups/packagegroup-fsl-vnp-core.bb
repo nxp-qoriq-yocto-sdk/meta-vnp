@@ -43,6 +43,8 @@ RDEPENDS_${PN} = " \
     curl \
     awsiotsdk-c \
     azure-iot-sdk-c \
+    aws-cloudlogger \
+    azure-cloudlogger \
 "
 
 RDEPENDS_${PN}-server = " \

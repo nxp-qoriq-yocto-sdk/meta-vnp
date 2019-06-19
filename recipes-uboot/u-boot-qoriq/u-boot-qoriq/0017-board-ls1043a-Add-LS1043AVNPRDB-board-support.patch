@@ -1,0 +1,668 @@
+From 588eab735a929eb732379caa422273518dfa096e Mon Sep 17 00:00:00 2001
+From: Harninder Rai <harninder.rai@nxp.com>
+Date: Wed, 20 Mar 2019 17:42:38 +0000
+Subject: [PATCH 17/40] board: ls1043a: Add LS1043AVNPRDB board support
+
+LS1043A-VNP-RDB belongs to LS1043A family and supports
+DDR3L-RS, eMMC boot, QuadSPI, IFC-NAND boot
+
+Signed-off-by: Harninder Rai <harninder.rai@nxp.com>
+Signed-off-by: Calvin Johnson <calvin.johnson@nxp.com>
+---
+ arch/arm/Kconfig                        |  12 +
+ arch/arm/cpu/armv8/Kconfig              |   5 +-
+ arch/arm/dts/Makefile                   |   1 +
+ arch/arm/dts/fsl-ls1043a-vnp-rdb.dts    | 104 +++++++
+ board/freescale/ls1043ardb/Kconfig      |  25 ++
+ board/freescale/ls1043ardb/ls1043ardb.c |   2 +
+ configs/ls1043avnp_rdb_defconfig        |  40 +++
+ include/configs/ls1043a_common.h        |   2 +-
+ include/configs/ls1043avnprdb.h         | 368 ++++++++++++++++++++++++
+ 9 files changed, 556 insertions(+), 3 deletions(-)
+ create mode 100644 arch/arm/dts/fsl-ls1043a-vnp-rdb.dts
+ create mode 100644 configs/ls1043avnp_rdb_defconfig
+ create mode 100644 include/configs/ls1043avnprdb.h
+
+diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
+index 44ef8c1b9e..a25281fa0c 100644
+--- a/arch/arm/Kconfig
++++ b/arch/arm/Kconfig
+@@ -1049,6 +1049,18 @@ config TARGET_LS1043ADCM
+ 	help
+ 	  Support for Freescale LS1043ADCM platform.
+ 
++config TARGET_LS1043AVNPRDB
++	bool "Support ls1043avnprdb"
++	select ARCH_LS1043A
++	select ARM64
++	select ARMV8_MULTIENTRY
++	select BOARD_LATE_INIT
++	select SUPPORT_SPL
++	select BOARD_EARLY_INIT_F
++	imply SCSI
++	help
++	  Support for Freescale LS1043AVNPRDB platform.
++
+ config TARGET_LS1046ARDB
+ 	bool "Support ls1046ardb"
+ 	select ARCH_LS1046A
+diff --git a/arch/arm/cpu/armv8/Kconfig b/arch/arm/cpu/armv8/Kconfig
+index f1967d241b..f8a49ee287 100644
+--- a/arch/arm/cpu/armv8/Kconfig
++++ b/arch/arm/cpu/armv8/Kconfig
+@@ -92,8 +92,9 @@ config PSCI_RESET
+ 		   !TARGET_LS1012ARDB && !TARGET_LS1012AFRDM && \
+ 		   !TARGET_LS1012A2G5RDB && !TARGET_LS1012AQDS && \
+ 		   !TARGET_LS1043ARDB && !TARGET_LS1043AQDS && \
+-		   !TARGET_LS1043ADCM && !TARGET_LS1046ARDB && \
+-                   !TARGET_LS1046AQDS && !TARGET_LS2081ARDB && \
++		   !TARGET_LS1043ADCM && !TARGET_LS1043AVNPRDB && \
++		   !TARGET_LS1046ARDB && !TARGET_LS1046AQDS && \
++		   !TARGET_LS2081ARDB && \
+ 		   !ARCH_UNIPHIER && !TARGET_S32V234EVB
+ 	help
+ 	  Most armv8 systems have PSCI support enabled in EL3, either through
+diff --git a/arch/arm/dts/Makefile b/arch/arm/dts/Makefile
+index 273980a119..b5d226ff6f 100644
+--- a/arch/arm/dts/Makefile
++++ b/arch/arm/dts/Makefile
+@@ -198,6 +198,7 @@ dtb-$(CONFIG_FSL_LSCH2) += fsl-ls1043a-qds-duart.dtb \
+ 	fsl-ls1046a-qds-duart.dtb \
+ 	fsl-ls1046a-qds-lpuart.dtb \
+ 	fsl-ls1043a-dcm.dtb \
++	fsl-ls1043a-vnp-rdb.dtb \
+ 	fsl-ls1046a-rdb.dtb \
+ 	fsl-ls1012a-qds.dtb \
+ 	fsl-ls1012a-rdb.dtb \
+diff --git a/arch/arm/dts/fsl-ls1043a-vnp-rdb.dts b/arch/arm/dts/fsl-ls1043a-vnp-rdb.dts
+new file mode 100644
+index 0000000000..160530142e
+--- /dev/null
++++ b/arch/arm/dts/fsl-ls1043a-vnp-rdb.dts
+@@ -0,0 +1,104 @@
++/*
++ * NXP ls1043a VNP-RDB board device tree source.
++ *
++ * Copyright 2019 NXP
++ *
++ *
++ * This file is licensed under the terms of the GNU General Public
++ * License version 2.  This program is licensed "as is" without any
++ * warranty of any kind, whether express or implied.
++ */
++
++/dts-v1/;
++/include/ "fsl-ls1043a.dtsi"
++
++/ {
++	model = "LS1043A VNP-RDB Board";
++
++        aliases {
++		spi0 = &qspi;
++        };
++
++};
++
++&qspi {
++       reg = <0x0 0x1550000 0x0 0x10000>,
++              <0x0 0x40000000 0x0 0x8000000>;
++
++       bus-num = <0>;
++       status = "okay";
++
++       qflash0: s25fl128s@0 {
++               #address-cells = <1>;
++               #size-cells = <1>;
++               compatible = "spi-flash";
++               spi-max-frequency = <20000000>;
++               reg = <0>;
++       };
++};
++
++&i2c0 {
++	status = "okay";
++	ina220@40 {
++		compatible = "ti,ina220";
++		reg = <0x40>;
++		shunt-resistor = <1000>;
++	};
++	adt7461a@4c {
++		compatible = "adi,adt7461a";
++		reg = <0x4c>;
++	};
++	eeprom@52 {
++		compatible = "at24,24c512";
++		reg = <0x52>;
++	};
++
++	eeprom@53 {
++		compatible = "at24,24c512";
++		reg = <0x53>;
++	};
++
++	rtc@68 {
++		compatible = "pericom,pt7c4338";
++		reg = <0x68>;
++	};
++};
++
++&ifc {
++	status = "okay";
++	#address-cells = <2>;
++	#size-cells = <1>;
++	/* NOR, NAND Flashes and FPGA on board */
++	ranges = <0x0 0x0 0x0 0x60000000 0x08000000
++		  0x1 0x0 0x0 0x7e800000 0x00010000
++		  0x2 0x0 0x0 0x7fb00000 0x00000100>;
++
++		nor@0,0 {
++			compatible = "cfi-flash";
++			#address-cells = <1>;
++			#size-cells = <1>;
++			reg = <0x0 0x0 0x8000000>;
++			bank-width = <2>;
++			device-width = <1>;
++		};
++
++		nand@1,0 {
++			compatible = "fsl,ifc-nand";
++			#address-cells = <1>;
++			#size-cells = <1>;
++			reg = <0x1 0x0 0x10000>;
++		};
++
++		cpld: board-control@2,0 {
++			compatible = "fsl,ls1043ardb-cpld";
++			reg = <0x2 0x0 0x0000100>;
++		};
++};
++
++&duart0 {
++	status = "okay";
++};
++
++&duart1 {
++	status = "okay";
++};
+diff --git a/board/freescale/ls1043ardb/Kconfig b/board/freescale/ls1043ardb/Kconfig
+index 2efa60db6e..08bb6c0d9a 100644
+--- a/board/freescale/ls1043ardb/Kconfig
++++ b/board/freescale/ls1043ardb/Kconfig
+@@ -51,3 +51,28 @@ config SYS_HAS_ARMV8_SECURE_BASE
+ 
+ 
+ endif
++
++if TARGET_LS1043AVNPRDB
++
++config SYS_BOARD
++	default "ls1043ardb"
++
++config SYS_VENDOR
++	default "freescale"
++
++config SYS_SOC
++	default "fsl-layerscape"
++
++config SYS_CONFIG_NAME
++	default "ls1043avnprdb"
++
++config SYS_HAS_ARMV8_SECURE_BASE
++	bool "Enable secure address for PSCI image"
++	depends on ARMV8_PSCI
++	default n
++	help
++	  PSCI image can be re-located to secure RAM.
++	  If enabled, please also define the value for ARMV8_SECURE_BASE,
++	  for LS1043ARDB, it could be some address in OCRAM.
++
++endif
+diff --git a/board/freescale/ls1043ardb/ls1043ardb.c b/board/freescale/ls1043ardb/ls1043ardb.c
+index 0b0bcba6e3..01352ca4e8 100644
+--- a/board/freescale/ls1043ardb/ls1043ardb.c
++++ b/board/freescale/ls1043ardb/ls1043ardb.c
+@@ -72,6 +72,8 @@ int checkboard(void)
+ 	sd1refclk_sel = CPLD_READ(sd1refclk_sel);
+ 	printf("SD1_CLK1 = %s, SD1_CLK2 = %s\n", freq[sd1refclk_sel], freq[0]);
+ 
++#elif defined (CONFIG_TARGET_LS1043AVNPRDB)
++	printf("Board: LS1043AVNPRDB\n");
+ #else
+ 	printf("Board: LS1043ADCM\n");
+ #endif
+diff --git a/configs/ls1043avnp_rdb_defconfig b/configs/ls1043avnp_rdb_defconfig
+new file mode 100644
+index 0000000000..6e893d679a
+--- /dev/null
++++ b/configs/ls1043avnp_rdb_defconfig
+@@ -0,0 +1,40 @@
++CONFIG_ARM=y
++CONFIG_TARGET_LS1043AVNPRDB=y
++CONFIG_FSL_LS_PPA=y
++CONFIG_QSPI_AHB_INIT=y
++CONFIG_DEFAULT_DEVICE_TREE="fsl-ls1043a-dcm"
++CONFIG_DISTRO_DEFAULTS=y
++CONFIG_FIT_VERBOSE=y
++CONFIG_OF_BOARD_SETUP=y
++CONFIG_QSPI_BOOT=y
++CONFIG_BOOTDELAY=10
++CONFIG_CMD_GPT=y
++CONFIG_CMD_MMC=y
++CONFIG_CMD_NAND=y
++CONFIG_CMD_SF=y
++CONFIG_CMD_I2C=y
++CONFIG_CMD_USB=y
++CONFIG_CMD_CACHE=y
++CONFIG_OF_CONTROL=y
++CONFIG_DM=y
++CONFIG_FSL_CAAM=y
++CONFIG_DM_SPI_FLASH=y
++CONFIG_SPI_FLASH=y
++CONFIG_SPI_FLASH_STMICRO=y
++# CONFIG_SPI_FLASH_USE_4K_SECTORS is not set
++CONFIG_PHYLIB=y
++CONFIG_NETDEVICES=y
++CONFIG_PHY_GIGE=y
++CONFIG_E1000=y
++CONFIG_PCI=y
++CONFIG_DM_PCI=y
++CONFIG_DM_PCI_COMPAT=y
++CONFIG_PCIE_LAYERSCAPE=y
++CONFIG_SYS_NS16550=y
++CONFIG_DM_SPI=y
++CONFIG_FSL_QSPI=y
++CONFIG_USB=y
++CONFIG_DM_USB=y
++CONFIG_USB_XHCI_HCD=y
++CONFIG_USB_XHCI_DWC3=y
++CONFIG_USB_STORAGE=y
+diff --git a/include/configs/ls1043a_common.h b/include/configs/ls1043a_common.h
+index fee31fd9d4..d1469a20df 100644
+--- a/include/configs/ls1043a_common.h
++++ b/include/configs/ls1043a_common.h
+@@ -180,7 +180,7 @@
+ #endif
+ 
+ /*  DSPI  */
+-#ifndef CONFIG_TARGET_LS1043ADCM
++#if !defined(CONFIG_TARGET_LS1043ADCM) && !defined(CONFIG_TARGET_LS1043AVNPRDB)
+ #ifndef SPL_NO_DSPI
+ #define CONFIG_FSL_DSPI
+ #ifdef CONFIG_FSL_DSPI
+diff --git a/include/configs/ls1043avnprdb.h b/include/configs/ls1043avnprdb.h
+new file mode 100644
+index 0000000000..e67cff78d9
+--- /dev/null
++++ b/include/configs/ls1043avnprdb.h
+@@ -0,0 +1,368 @@
++/*
++ * Copyright 2015 Freescale Semiconductor
++ *
++ * SPDX-License-Identifier:	GPL-2.0+
++ */
++
++#ifndef __LS1043AVNPRDB_H__
++#define __LS1043AVNPRDB_H__
++
++#include "ls1043a_common.h"
++
++#if defined(CONFIG_NAND_BOOT) || defined(CONFIG_SD_BOOT)
++#define CONFIG_SYS_TEXT_BASE		0x82000000
++#elif defined(CONFIG_QSPI_BOOT)
++#define  CONFIG_SYS_TEXT_BASE		0x40100000
++#else
++#define CONFIG_SYS_TEXT_BASE		0x60100000
++#endif
++
++#define CONFIG_SYS_CLK_FREQ		100000000
++#define CONFIG_DDR_CLK_FREQ		100000000
++
++#define CONFIG_LAYERSCAPE_NS_ACCESS
++#define CONFIG_MISC_INIT_R
++
++#define CONFIG_DIMM_SLOTS_PER_CTLR	1
++/* Physical Memory Map */
++#define CONFIG_CHIP_SELECTS_PER_CTRL	4
++#define CONFIG_NR_DRAM_BANKS		2
++
++#define CONFIG_SYS_SPD_BUS_NUM		0
++
++#ifndef CONFIG_SPL
++#define CONFIG_SYS_DDR_RAW_TIMING
++#define CONFIG_FSL_DDR_INTERACTIVE	/* Interactive debugging */
++#define CONFIG_FSL_DDR_BIST
++#define CONFIG_ECC_INIT_VIA_DDRCONTROLLER
++#define CONFIG_MEM_INIT_VALUE           0xdeadbeef
++#endif
++
++/* TBD: RCW files and paths need to be created for VNPRDB */
++#ifdef CONFIG_RAMBOOT_PBL
++#define CONFIG_SYS_FSL_PBL_PBI board/freescale/ls1043ardb/ls1043adcm_pbi.cfg
++#endif
++
++#ifdef CONFIG_NAND_BOOT
++#define CONFIG_SYS_FSL_PBL_RCW board/freescale/ls1043ardb/ls1043adcm_rcw_nand.cfg
++#endif
++
++#ifdef CONFIG_SD_BOOT
++#define CONFIG_SYS_FSL_PBL_RCW board/freescale/ls1043ardb/ls1043adcm_rcw_sd.cfg
++#define CONFIG_CMD_SPL
++#define CONFIG_SYS_SPL_ARGS_ADDR	0x90000000
++#define CONFIG_SYS_MMCSD_RAW_MODE_KERNEL_SECTOR	0x10000
++#define CONFIG_SYS_MMCSD_RAW_MODE_ARGS_SECTOR	0x500
++#define CONFIG_SYS_MMCSD_RAW_MODE_ARGS_SECTORS	30
++#endif
++
++/* QSPI */
++#ifndef SPL_NO_QSPI
++#ifdef CONFIG_FSL_QSPI
++#define FSL_QSPI_FLASH_SIZE             SZ_128M
++#define FSL_QSPI_FLASH_NUM              2
++#endif
++#endif
++
++/*
++ * NOR Flash Definitions
++ */
++#define CONFIG_SYS_NOR_CSPR_EXT		(0x0)
++#define CONFIG_SYS_NOR_AMASK		IFC_AMASK(128*1024*1024)
++#define CONFIG_SYS_NOR_CSPR					\
++	(CSPR_PHYS_ADDR(CONFIG_SYS_FLASH_BASE_PHYS)		| \
++	CSPR_PORT_SIZE_16					| \
++	CSPR_MSEL_NOR						| \
++	CSPR_V)
++
++/* NOR Flash Timing Params */
++#define CONFIG_SYS_NOR_CSOR		(CSOR_NOR_ADM_SHIFT(4) | \
++					CSOR_NOR_TRHZ_80)
++#define CONFIG_SYS_NOR_FTIM0		(FTIM0_NOR_TACSE(0x1) | \
++					FTIM0_NOR_TEADC(0x1) | \
++					FTIM0_NOR_TAVDS(0x0) | \
++					FTIM0_NOR_TEAHC(0xc))
++#define CONFIG_SYS_NOR_FTIM1		(FTIM1_NOR_TACO(0x1c) | \
++					FTIM1_NOR_TRAD_NOR(0xb) | \
++					FTIM1_NOR_TSEQRAD_NOR(0x9))
++#define CONFIG_SYS_NOR_FTIM2		(FTIM2_NOR_TCS(0x1) | \
++					FTIM2_NOR_TCH(0x4) | \
++					FTIM2_NOR_TWPH(0x8) | \
++					FTIM2_NOR_TWP(0x10))
++#define CONFIG_SYS_NOR_FTIM3		0
++#define CONFIG_SYS_IFC_CCR		0x01000000
++
++#define CONFIG_SYS_MAX_FLASH_BANKS	1	/* number of banks */
++#define CONFIG_SYS_MAX_FLASH_SECT	1024	/* sectors per device */
++#define CONFIG_SYS_FLASH_ERASE_TOUT	60000	/* Flash Erase Timeout (ms) */
++#define CONFIG_SYS_FLASH_WRITE_TOUT	500	/* Flash Write Timeout (ms) */
++
++#define CONFIG_SYS_FLASH_EMPTY_INFO
++#define CONFIG_SYS_FLASH_BANKS_LIST	{ CONFIG_SYS_FLASH_BASE_PHYS }
++
++#define CONFIG_CFI_FLASH_USE_WEAK_ACCESSORS
++#define CONFIG_SYS_WRITE_SWAPPED_DATA
++
++/*
++ * NAND Flash Definitions
++ */
++#ifndef SPL_NO_IFC
++#define CONFIG_NAND_FSL_IFC
++#endif
++
++#define CONFIG_SYS_NAND_BASE		0x7e800000
++#define CONFIG_SYS_NAND_BASE_PHYS	CONFIG_SYS_NAND_BASE
++
++#define CONFIG_SYS_NAND_CSPR_EXT	(0x0)
++#define CONFIG_SYS_NAND_CSPR	(CSPR_PHYS_ADDR(CONFIG_SYS_NAND_BASE_PHYS) \
++				| CSPR_PORT_SIZE_8	\
++				| CSPR_MSEL_NAND	\
++				| CSPR_V)
++#define CONFIG_SYS_NAND_AMASK	IFC_AMASK(64*1024)
++#define CONFIG_SYS_NAND_CSOR	(CSOR_NAND_ECC_ENC_EN	/* ECC on encode */ \
++				| CSOR_NAND_ECC_DEC_EN	/* ECC on decode */ \
++				| CSOR_NAND_ECC_MODE_4	/* 4-bit ECC */ \
++				| CSOR_NAND_RAL_3	/* RAL = 3 Bytes */ \
++				| CSOR_NAND_PGS_2K	/* Page Size = 2K */ \
++				| CSOR_NAND_SPRZ_64	/* Spare size = 64 */ \
++				| CSOR_NAND_PB(64))	/* 64 Pages Per Block */
++
++#define CONFIG_SYS_NAND_ONFI_DETECTION
++
++#define CONFIG_SYS_NAND_FTIM0		(FTIM0_NAND_TCCST(0x7) | \
++					FTIM0_NAND_TWP(0x18)   | \
++					FTIM0_NAND_TWCHT(0x7) | \
++					FTIM0_NAND_TWH(0xa))
++#define CONFIG_SYS_NAND_FTIM1		(FTIM1_NAND_TADLE(0x32) | \
++					FTIM1_NAND_TWBE(0x39)  | \
++					FTIM1_NAND_TRR(0xe)   | \
++					FTIM1_NAND_TRP(0x18))
++#define CONFIG_SYS_NAND_FTIM2		(FTIM2_NAND_TRAD(0xf) | \
++					FTIM2_NAND_TREH(0xa) | \
++					FTIM2_NAND_TWHRE(0x1e))
++#define CONFIG_SYS_NAND_FTIM3		0x0
++
++#define CONFIG_SYS_NAND_BASE_LIST	{ CONFIG_SYS_NAND_BASE }
++#define CONFIG_SYS_MAX_NAND_DEVICE	1
++#define CONFIG_MTD_NAND_VERIFY_WRITE
++
++#define CONFIG_SYS_NAND_BLOCK_SIZE	(128 * 1024)
++
++#ifdef CONFIG_NAND_BOOT
++#define CONFIG_SPL_PAD_TO		0x20000		/* block aligned */
++#define CONFIG_SYS_NAND_U_BOOT_OFFS	CONFIG_SPL_PAD_TO
++#define CONFIG_SYS_NAND_U_BOOT_SIZE	(1024 << 10)
++#endif
++
++/*
++ * CPLD
++ */
++#define CONFIG_SYS_CPLD_BASE		0x7fb00000
++#define CPLD_BASE_PHYS			CONFIG_SYS_CPLD_BASE
++
++#define CONFIG_SYS_CPLD_CSPR_EXT	(0x0)
++#define CONFIG_SYS_CPLD_CSPR		(CSPR_PHYS_ADDR(CPLD_BASE_PHYS) | \
++					CSPR_PORT_SIZE_8 | \
++					CSPR_MSEL_GPCM | \
++					CSPR_V)
++#define CONFIG_SYS_CPLD_AMASK		IFC_AMASK(64 * 1024)
++#define CONFIG_SYS_CPLD_CSOR		(CSOR_NOR_ADM_SHIFT(4) | \
++					CSOR_NOR_NOR_MODE_AVD_NOR | \
++					CSOR_NOR_TRHZ_80)
++
++/* CPLD Timing parameters for IFC GPCM */
++#define CONFIG_SYS_CPLD_FTIM0		(FTIM0_GPCM_TACSE(0xf) | \
++					FTIM0_GPCM_TEADC(0xf) | \
++					FTIM0_GPCM_TEAHC(0xf))
++#define CONFIG_SYS_CPLD_FTIM1		(FTIM1_GPCM_TACO(0xff) | \
++					FTIM1_GPCM_TRAD(0x3f))
++#define CONFIG_SYS_CPLD_FTIM2		(FTIM2_GPCM_TCS(0xf) | \
++					FTIM2_GPCM_TCH(0xf) | \
++					FTIM2_GPCM_TWP(0xff))
++#define CONFIG_SYS_CPLD_FTIM3		0x0
++
++/* IFC Timing Params */
++#ifdef CONFIG_NAND_BOOT
++#define CONFIG_SYS_CSPR0_EXT		CONFIG_SYS_NAND_CSPR_EXT
++#define CONFIG_SYS_CSPR0		CONFIG_SYS_NAND_CSPR
++#define CONFIG_SYS_AMASK0		CONFIG_SYS_NAND_AMASK
++#define CONFIG_SYS_CSOR0		CONFIG_SYS_NAND_CSOR
++#define CONFIG_SYS_CS0_FTIM0		CONFIG_SYS_NAND_FTIM0
++#define CONFIG_SYS_CS0_FTIM1		CONFIG_SYS_NAND_FTIM1
++#define CONFIG_SYS_CS0_FTIM2		CONFIG_SYS_NAND_FTIM2
++#define CONFIG_SYS_CS0_FTIM3		CONFIG_SYS_NAND_FTIM3
++
++#define CONFIG_SYS_CSPR1_EXT		CONFIG_SYS_NOR_CSPR_EXT
++#define CONFIG_SYS_CSPR1		CONFIG_SYS_NOR_CSPR
++#define CONFIG_SYS_AMASK1		CONFIG_SYS_NOR_AMASK
++#define CONFIG_SYS_CSOR1		CONFIG_SYS_NOR_CSOR
++#define CONFIG_SYS_CS1_FTIM0		CONFIG_SYS_NOR_FTIM0
++#define CONFIG_SYS_CS1_FTIM1		CONFIG_SYS_NOR_FTIM1
++#define CONFIG_SYS_CS1_FTIM2		CONFIG_SYS_NOR_FTIM2
++#define CONFIG_SYS_CS1_FTIM3		CONFIG_SYS_NOR_FTIM3
++#else
++#define CONFIG_SYS_CSPR0_EXT		CONFIG_SYS_NAND_CSPR_EXT
++#define CONFIG_SYS_CSPR0		CONFIG_SYS_NAND_CSPR
++#define CONFIG_SYS_AMASK0		CONFIG_SYS_NAND_AMASK
++#define CONFIG_SYS_CSOR0		CONFIG_SYS_NAND_CSOR
++#define CONFIG_SYS_CS0_FTIM0		CONFIG_SYS_NAND_FTIM0
++#define CONFIG_SYS_CS0_FTIM1		CONFIG_SYS_NAND_FTIM1
++#define CONFIG_SYS_CS0_FTIM2		CONFIG_SYS_NAND_FTIM2
++#define CONFIG_SYS_CS0_FTIM3		CONFIG_SYS_NAND_FTIM3
++
++#define CONFIG_SYS_CSPR1_EXT		CONFIG_SYS_NOR_CSPR_EXT
++#define CONFIG_SYS_CSPR1		CONFIG_SYS_NOR_CSPR
++#define CONFIG_SYS_AMASK1		CONFIG_SYS_NOR_AMASK
++#define CONFIG_SYS_CSOR1		CONFIG_SYS_NOR_CSOR
++#define CONFIG_SYS_CS1_FTIM0		CONFIG_SYS_NOR_FTIM0
++#define CONFIG_SYS_CS1_FTIM1		CONFIG_SYS_NOR_FTIM1
++#define CONFIG_SYS_CS1_FTIM2		CONFIG_SYS_NOR_FTIM2
++#define CONFIG_SYS_CS1_FTIM3		CONFIG_SYS_NOR_FTIM3
++#endif
++
++#define CONFIG_SYS_CSPR2_EXT		CONFIG_SYS_CPLD_CSPR_EXT
++#define CONFIG_SYS_CSPR2		CONFIG_SYS_CPLD_CSPR
++#define CONFIG_SYS_AMASK2		CONFIG_SYS_CPLD_AMASK
++#define CONFIG_SYS_CSOR2		CONFIG_SYS_CPLD_CSOR
++#define CONFIG_SYS_CS2_FTIM0		CONFIG_SYS_CPLD_FTIM0
++#define CONFIG_SYS_CS2_FTIM1		CONFIG_SYS_CPLD_FTIM1
++#define CONFIG_SYS_CS2_FTIM2		CONFIG_SYS_CPLD_FTIM2
++#define CONFIG_SYS_CS2_FTIM3		CONFIG_SYS_CPLD_FTIM3
++
++/* EEPROM */
++#ifndef SPL_NO_EEPROM
++#define CONFIG_ID_EEPROM
++#define CONFIG_SYS_I2C_EEPROM_NXID
++#define CONFIG_SYS_EEPROM_BUS_NUM		0
++#define CONFIG_SYS_I2C_EEPROM_ADDR		0x53
++#define CONFIG_SYS_I2C_EEPROM_ADDR_LEN		1
++#define CONFIG_SYS_EEPROM_PAGE_WRITE_BITS	3
++#define CONFIG_SYS_EEPROM_PAGE_WRITE_DELAY_MS	5
++#endif
++
++/*
++ * Environment
++ */
++#ifndef SPL_NO_ENV
++#define CONFIG_ENV_OVERWRITE
++#endif
++
++#if defined(CONFIG_NAND_BOOT)
++#define CONFIG_ENV_IS_IN_NAND
++#define CONFIG_ENV_SIZE			0x2000
++#define CONFIG_ENV_OFFSET		(24 * CONFIG_SYS_NAND_BLOCK_SIZE)
++#elif defined(CONFIG_SD_BOOT)
++#define CONFIG_ENV_IS_IN_MMC
++#define CONFIG_ENV_OFFSET		(3 * 1024 * 1024)
++#define CONFIG_SYS_MMC_ENV_DEV		0
++#define CONFIG_ENV_SIZE			0x2000
++#elif defined(CONFIG_QSPI_BOOT)
++#define SYS_NO_FLASH
++#undef CONFIG_CMD_IMLS
++#define CONFIG_ENV_IS_IN_SPI_FLASH
++#define CONFIG_ENV_SIZE			0x2000		/* 8KB */
++#define CONFIG_ENV_OFFSET		0x300000	/* 3MB */
++#define CONFIG_ENV_SECT_SIZE		0x40000		/* 256KB */
++#else
++#define CONFIG_ENV_ADDR			(CONFIG_SYS_FLASH_BASE + 0x300000)
++#define CONFIG_ENV_SECT_SIZE		0x20000
++#define CONFIG_ENV_SIZE			0x20000
++#endif
++
++/* FMan */
++#ifndef SPL_NO_FMAN
++#define AQR105_IRQ_MASK			0x40000000
++
++#ifdef CONFIG_NET
++#define CONFIG_PHY_VITESSE
++#define CONFIG_PHY_REALTEK
++#endif
++
++#ifdef CONFIG_SYS_DPAA_FMAN
++#define CONFIG_FMAN_ENET
++#define CONFIG_PHY_FIXED
++#define CONFIG_PHYLIB_10G
++#define CONFIG_PHY_AQUANTIA
++
++#define RGMII_PHY1_ADDR			0x1
++#define RGMII_PHY2_ADDR			0x2
++
++#define QSGMII_PORT1_PHY_ADDR		0x4
++#define QSGMII_PORT2_PHY_ADDR		0x5
++#define QSGMII_PORT3_PHY_ADDR		0x6
++#define QSGMII_PORT4_PHY_ADDR		0x7
++
++#define FM1_10GEC1_PHY_ADDR		0x1
++
++#define CONFIG_ETHPRIME			"FM1@DTSEC3"
++#endif
++#endif
++
++/* QE */
++#ifndef SPL_NO_QE
++#if !defined(CONFIG_NAND_BOOT) && !defined(CONFIG_QSPI_BOOT)
++#define CONFIG_U_QE
++#endif
++#endif
++
++/* USB */
++#ifndef SPL_NO_USB
++#define CONFIG_HAS_FSL_XHCI_USB
++#ifdef CONFIG_HAS_FSL_XHCI_USB
++#define CONFIG_USB_XHCI_FSL
++#define CONFIG_USB_MAX_CONTROLLER_COUNT         2
++#endif
++#endif
++
++/* SATA */
++#ifndef SPL_NO_SATA
++#define CONFIG_LIBATA
++#define CONFIG_SCSI_AHCI
++#ifndef CONFIG_CMD_EXT2
++#define CONFIG_CMD_EXT2
++#endif
++#define CONFIG_SYS_SCSI_MAX_SCSI_ID		2
++#define CONFIG_SYS_SCSI_MAX_LUN			2
++#define CONFIG_SYS_SCSI_MAX_DEVICE		(CONFIG_SYS_SCSI_MAX_SCSI_ID * \
++						CONFIG_SYS_SCSI_MAX_LUN)
++#define SCSI_VEND_ID 0x1b4b
++#define SCSI_DEV_ID  0x9170
++#define CONFIG_SCSI_DEV_LIST {SCSI_VEND_ID, SCSI_DEV_ID}
++#endif
++
++#undef CONFIG_EXTRA_ENV_SETTINGS
++#define CONFIG_EXTRA_ENV_SETTINGS		\
++	"hwconfig=fsl_ddr:bank_intlv=auto\0"	\
++	"fdt_high=0xffffffffffffffff\0"		\
++	"initrd_high=0xffffffffffffffff\0"	\
++	"load_addr=0xa0000000\0"		\
++	"kernel_start=0x1000000\0"		\
++	"kernel_addr_nand=0x61000000\0"		\
++	"kernel_addr_nor=0x41000000\0"		\
++	"kernel_addr_sd=0x8000\0"		\
++	"kernel_size=0x2800000\0"		\
++	"kernel_size_sd=0x14000\0"		\
++	"console=ttyS0,115200\0"		\
++	"qspi_bootcmd=echo Trying load from qspi..;"	\
++		"sf probe && sf read $load_addr "	\
++		"$kernel_start $kernel_size; bootm $load_addr\0"	\
++	"nand_bootcmd=echo Trying load from nand..;"	\
++		"nand read $load_addr $kernel_start "	\
++		"$kernel_size; bootm $load_addr\0"	    \
++	"sd_bootcmd=echo Trying load from SD ..;"       \
++		"mmcinfo; mmc read $load_addr "         \
++		"$kernel_addr_sd $kernel_size_sd && bootm $load_addr\0"
++
++#undef CONFIG_BOOTCOMMAND
++#if defined(CONFIG_QSPI_BOOT) || defined(CONFIG_SD_BOOT_QSPI)
++#define CONFIG_BOOTCOMMAND "run nand_bootcmd"
++#elif defined(CONFIG_SD_BOOT)
++#define CONFIG_BOOTCOMMAND "run sd_bootcmd"
++#else
++#define CONFIG_BOOTCOMMAND "run nand_bootcmd"
++#endif
++
++
++#include <asm/fsl_secure_boot.h>
++
++#endif /* __LS1043AVNPRDB_H__ */
+-- 
+2.17.1
+
