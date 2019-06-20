@@ -5,8 +5,10 @@ LIC_FILES_CHKSUM = "file://COPYING;md5=8ca43cbc842c2336e835926c2166c28b"
 
 SRC_URI = "git://source.codeaurora.org/external/qoriq/qoriq-yocto-sdk/dpa-app;nobranch=1 \
            file://001_dcm_dpa-app.patch \
-           file://002_dcm_dpa-app.patch \
 "
+
+SRC_URI_append_ls1043avnprdb += " file://002_dcm_dpa-app.patch "
+
 SRCREV = "c7d39171d27324d90138e1093fc8a17cdb85795a"
 
 S = "${WORKDIR}/git"
