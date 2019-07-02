@@ -20,6 +20,7 @@ SRC_URI_append_ls1043avnprdb += " \
 	file://0014-sdk_dpaa-advertise-2.5G-speeds-for-xgmii-interfaces.patch \
 	file://0015-arm64-dts-ls1043a-support-vnp-rdb-platform.patch \
 	file://0016-dts-vnprdb-Support-network-interfaces-on-ls1043avnpr.patch \
+	file://0017-updating-the-condition-for-buffer-recycle.patch \
 "
 DELTA_KERNEL_DEFCONFIG_append_ls1043avnpevb = "vnp-kernel.config "
 DELTA_KERNEL_DEFCONFIG_append_ls1043avnprdb = "vnp-kernel.config "

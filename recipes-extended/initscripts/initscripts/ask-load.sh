@@ -22,6 +22,10 @@ echo "Enabling ipv4 forwarding... "
 echo 1 > /proc/sys/net/ipv4/ip_forward
 iptables -t filter -A FORWARD -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
 
+echo "Enabling ipv6 forwarding... "
+echo 1 > /proc/sys/net/ipv6/conf/all/forwarding
+ip6tables -t filter -A FORWARD -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+
 mkdir -p /sqlite3-db
 
 echo -e "ctrl_interface=DIR=/run/wpa_supplicant \nupdate_config=1" > /etc/wpa_supplicant-evb.conf

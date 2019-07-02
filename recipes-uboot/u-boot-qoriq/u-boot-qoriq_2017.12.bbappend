@@ -44,5 +44,5 @@ SRC_URI_append_ls1043avnprdb += " \
         file://0038-dts-ls1043avnprdb-cosmetic-change.patch \
         file://0039-boards-ls1043avnprdb-configure-gpios.patch \
         file://0040-configs-ls1043avnprdb-disable-CONFIG_SPI_FLASH_BAR.patch \
-        file://0041-enabling-saveenv-for-QSPI-flash.patch \
+        file://0041-ls1043avnprdb-enable-saveenv.patch \
 "
