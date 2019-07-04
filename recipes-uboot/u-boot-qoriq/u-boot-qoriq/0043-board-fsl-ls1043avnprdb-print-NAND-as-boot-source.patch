@@ -1,0 +1,32 @@
+From 56df7b1582bc865bb33742b488cf528a94994c78 Mon Sep 17 00:00:00 2001
+From: Calvin Johnson <calvin.johnson@nxp.com>
+Date: Fri, 28 Jun 2019 16:14:36 +0530
+Subject: [PATCH 2/3] board: fsl: ls1043avnprdb: print NAND as boot source
+
+Signed-off-by: Calvin Johnson <calvin.johnson@nxp.com>
+---
+ board/freescale/ls1043ardb/ls1043ardb.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/board/freescale/ls1043ardb/ls1043ardb.c b/board/freescale/ls1043ardb/ls1043ardb.c
+index 3a0d31cf04..0a1701422f 100755
+--- a/board/freescale/ls1043ardb/ls1043ardb.c
++++ b/board/freescale/ls1043ardb/ls1043ardb.c
+@@ -112,11 +112,13 @@ int checkboard(void)
+ 
+ 	printf("Boot from ");
+ #ifdef CONFIG_SD_BOOT
+-	puts("SD\n");
++	puts("eMMC\n");
+ #elif defined(CONFIG_EMMC_BOOT)
+ 	puts("eMMC\n");
+ #elif defined(CONFIG_QSPI_BOOT)
+ 	puts("QSPI\n");
++#elif defined(CONFIG_NAND_BOOT)
++	puts("NAND \n");
+ #endif
+ 
+ #else
+-- 
+2.17.1
+

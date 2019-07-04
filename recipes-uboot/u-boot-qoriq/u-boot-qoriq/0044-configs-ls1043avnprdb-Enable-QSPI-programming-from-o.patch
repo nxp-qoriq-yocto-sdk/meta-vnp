@@ -1,0 +1,55 @@
+From 8027a40cbb406c16990674a3c968d5e926a75e58 Mon Sep 17 00:00:00 2001
+From: Calvin Johnson <calvin.johnson@nxp.com>
+Date: Tue, 2 Jul 2019 12:35:04 +0530
+Subject: [PATCH 3/3] configs: ls1043avnprdb: Enable QSPI programming from
+ other boot options
+
+User should be able to program QSPI flash from other boot options like
+NAND and eMMC. Provide support for the same by moving related config
+flags to common section of include file.
+
+Signed-off-by: Calvin Johnson <calvin.johnson@nxp.com>
+---
+ include/configs/ls1043avnprdb.h | 10 ++++------
+ 1 file changed, 4 insertions(+), 6 deletions(-)
+
+diff --git a/include/configs/ls1043avnprdb.h b/include/configs/ls1043avnprdb.h
+index 3b10d89b62..81908e5835 100755
+--- a/include/configs/ls1043avnprdb.h
++++ b/include/configs/ls1043avnprdb.h
+@@ -242,6 +242,10 @@ board/freescale/ls1043ardb/ls1043avnprdb_rcw_emmc_nand.cfg
+ 
+ #define FSL_QSPI_FLASH_SIZE		SZ_64M
+ #define FSL_QSPI_FLASH_NUM		2
++#define CONFIG_SPI_FLASH_SPANSION
++#define CONFIG_FSL_SPI_INTERFACE
++#define CONFIG_SF_DATAFLASH
++
+ /*
+  * Environment
+  */
+@@ -270,21 +274,15 @@ board/freescale/ls1043ardb/ls1043avnprdb_rcw_emmc_nand.cfg
+ #define CONFIG_ENV_SPI_CS		0
+ #define CONFIG_ENV_SPI_MAX_HZ		1000000
+ #define CONFIG_ENV_SPI_MODE		0x03
+-#define CONFIG_SPI_FLASH_SPANSION
+-#define CONFIG_FSL_SPI_INTERFACE
+-#define CONFIG_SF_DATAFLASH
+-
+ 
+ /* FMan fireware Pre-load address */
+ #define CONFIG_SYS_QE_FW_IN_SPIFLASH
+ #define CONFIG_SYS_QE_FW_ADDR		0x940000
+ 
+-
+ /*
+  * Environment
+  */
+ #define CONFIG_ENV_OVERWRITE
+-
+ #define CONFIG_ENV_SIZE			0x40000          /* 256KB */
+ 
+ #else
+-- 
+2.17.1
+

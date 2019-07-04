@@ -45,4 +45,7 @@ SRC_URI_append_ls1043avnprdb += " \
         file://0039-boards-ls1043avnprdb-configure-gpios.patch \
         file://0040-configs-ls1043avnprdb-disable-CONFIG_SPI_FLASH_BAR.patch \
         file://0041-ls1043avnprdb-enable-saveenv.patch \
+        file://0042-board-fsl-ls1043avnprdb-modify-board-name-to-MPC-LS-.patch \
+        file://0043-board-fsl-ls1043avnprdb-print-NAND-as-boot-source.patch \
+        file://0044-configs-ls1043avnprdb-Enable-QSPI-programming-from-o.patch \
 "
