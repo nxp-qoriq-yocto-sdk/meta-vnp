@@ -1,0 +1,64 @@
+From 7b02878d404aa53e1e76ab21aa0c54cb13b5a386 Mon Sep 17 00:00:00 2001
+From: Bhanu Chander G <bhanu.gaddoju@nxp.com>
+Date: Mon, 8 Jul 2019 19:50:50 +0530
+Subject: [PATCH 1/6] adding devman.h file
+
+---
+ cdx.h      | 1 +
+ cdx_main.c | 1 -
+ devman.c   | 1 -
+ devman.h   | 7 +++++++
+ 4 files changed, 8 insertions(+), 2 deletions(-)
+ create mode 100644 devman.h
+
+diff --git a/cdx.h b/cdx.h
+index d9882be..3190778 100644
+--- a/cdx.h
++++ b/cdx.h
+@@ -56,5 +56,6 @@
+ #include "cdx_cmdhandler.h"
+ #include "layer2.h"
+ #include "globals.h"
++#include "devman.h"
+ 
+ #endif /* _CDX_H_ */
+diff --git a/cdx_main.c b/cdx_main.c
+index 7c03cc1..17931b8 100644
+--- a/cdx_main.c
++++ b/cdx_main.c
+@@ -31,7 +31,6 @@ extern int dpaa_vwd_init(void);
+ extern void dpaa_vwd_exit(void);
+ extern int cdx_dpa_ipsec_init(void);
+ extern int cdx_dpa_ipsec_exit(void);
+-extern int devman_init_linux_stats(void);
+ extern int cdx_init_frag_module(void);
+ extern void cdx_deinit_frag_module(void);
+ extern int cdx_init_ip_reassembly(void);
+diff --git a/devman.c b/devman.c
+index 33d81cf..e94f37f 100755
+--- a/devman.c
++++ b/devman.c
+@@ -76,7 +76,6 @@ extern int get_ofport_fman_and_portindex(uint32_t fm_index, uint32_t handle, uin
+ 			uint32_t *portid);
+ extern void *alloc_iface_stats(uint32_t dev_type, uint8_t *rx_offset, uint8_t *tx_offset);
+ extern void free_iface_stats(uint32_t dev_type, void *stats);
+-extern void dev_fp_stats_get_register(fp_iface_stats_get func);
+ extern int qman_alloc_fqid_range(u32 *result, u32 count, u32 align, 
+ 		int partial);
+ 
+diff --git a/devman.h b/devman.h
+new file mode 100644
+index 0000000..5fe323a
+--- /dev/null
++++ b/devman.h
+@@ -0,0 +1,7 @@
++/* SPDX-License-Identifier: GPL-2.0+ */
++/*
++ * Copyright 2018 NXP
++ */
++
++int devman_init_linux_stats(void);
++int devman_deinit_linux_stats(void);
+-- 
+2.17.1
+

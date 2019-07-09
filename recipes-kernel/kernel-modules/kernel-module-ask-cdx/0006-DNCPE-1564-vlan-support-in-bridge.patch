@@ -1,0 +1,412 @@
+From 866e8d7811ce07a6ff13238c7b7fa55ba12b424b Mon Sep 17 00:00:00 2001
+From: Madhu Koriginja <madhu.koriginja@nxp.com>
+Date: Sun, 26 May 2019 13:40:57 +0530
+Subject: [PATCH 6/6] DNCPE-1564: vlan support in bridge.
+
+Adding vlan and qinq support in bridge.
+stats support in bridged interfaces and parent path interfaces.
+---
+ cdx_ehash.c | 162 ++++++++++++++++++++++++++++++++++++++++------------
+ devman.c    |  83 +++++++++++++++++++++++++--
+ devman.h    |   7 +++
+ layer2.c    |   7 +++
+ layer2.h    |   1 +
+ 5 files changed, 218 insertions(+), 42 deletions(-)
+
+diff --git a/cdx_ehash.c b/cdx_ehash.c
+index 5526a6d..8b2a1e9 100755
+--- a/cdx_ehash.c
++++ b/cdx_ehash.c
+@@ -123,10 +123,9 @@ static int create_tunnel_remove_hm(struct ins_entry_info *info);
+ static int create_pppoe_relay_hm(struct ins_entry_info *info,pPPPoE_Info entry);
+ static int insert_remove_pppoe_hm(struct ins_entry_info *info, uint32_t);
+ static int insert_remove_vlan_hm(struct ins_entry_info *info, uint32_t, uint32_t);
++static int create_vlan_ins_hm(struct ins_entry_info *info);
+ static int create_eth_rx_stats_hm(struct ins_entry_info *info);
+ extern uint32_t get_logical_ifstats_base(void);
+-extern int dpa_get_ifstatsinfo_by_name(char *name, uint32_t *rxstats_index,
+-                uint32_t *txistats_index);
+ 
+ extern int cdx_ipsec_fill_sec_info( PCtEntry entry, 
+ 		struct ins_entry_info *info); 
+@@ -955,11 +954,57 @@ err_ret:
+ 	return FAILURE;
+ }
+ 
+-static int fill_bridge_actions(struct ins_entry_info *info, uint8_t rx_stats_offset)
++static int fill_bridge_actions(struct ins_entry_info *info)
+ {
++	POnifDesc ifdesc; 
++	struct L2Flow_entry *entry;
++	struct _itf *itf;
++	int ii;
+ #ifdef INCLUDE_ETHER_IFSTATS
+-        uint32_t stats_ptr;
+         struct en_ehash_update_ether_rx_stats *param;
++        uint32_t stats_ptr;
++	uint32_t rxidx;
++	uint32_t txidx;
++#endif
++
++	entry = (struct L2Flow_entry *)info->entry;
++#ifdef INCLUDE_ETHER_IFSTATS
++	ifdesc = get_onif_by_name(&entry->out_ifname[0]);
++	if((!ifdesc) || (!ifdesc->itf)) {
++		DPA_ERROR("%s::unable to validate iface %s\n", __FUNCTION__,
++				&entry->out_ifname[0]);
++                return FAILURE;
++	}
++	/* get physical interface */
++	itf = itf_get_phys_itf(ifdesc->itf);
++
++	if (dpa_get_ifstatsinfo_by_itf_id(itf->index, &rxidx, &txidx)) {
++		DPA_ERROR("%s::unable to get ifstats info for iface %s\n",
++				__FUNCTION__, &entry->out_ifname[0]);
++                return FAILURE;
++	}
++	/* provide the egress interface tx stats index */
++	info->l2_info.ether_stats_offset = txidx;	
++#endif
++	if((ifdesc = get_onif_by_name(&entry->in_ifname[0])) == NULL) {
++		DPA_ERROR("%s::unable to validate iface %s\n", __FUNCTION__,
++				&entry->in_ifname[0]);
++                return FAILURE;
++	}
++	if((!ifdesc) || (!ifdesc->itf)) {
++		DPA_ERROR("%s::unable to validate iface %s\n", __FUNCTION__,
++				&entry->in_ifname[0]);
++                return FAILURE;
++	}
++#ifdef INCLUDE_ETHER_IFSTATS
++	/* get physical interface */
++	itf = itf_get_phys_itf(ifdesc->itf);
++	/* add ingress eth stats */
++	if (dpa_get_ifstatsinfo_by_itf_id(itf->index, &rxidx, &txidx)) {
++		DPA_ERROR("%s::unable to get ifstats info for iface %s\n",
++				__FUNCTION__, &entry->in_ifname[0]);
++                return FAILURE;
++	}
+ 
+         if (info->opc_count == MAX_OPCODES)
+                 return FAILURE;
+@@ -967,18 +1012,67 @@ static int fill_bridge_actions(struct ins_entry_info *info, uint8_t rx_stats_off
+                 return FAILURE;
+         param = (struct en_ehash_update_ether_rx_stats *)info->paramptr;
+         stats_ptr = (get_logical_ifstats_base() +
+-                                (rx_stats_offset * sizeof(struct en_ehash_stats)));
++                                (rxidx * sizeof(struct en_ehash_stats)));
+ #ifdef CDX_DPA_DEBUG
+         DPA_INFO("%s::stats ptr %x\n", __FUNCTION__, stats_ptr);
+ #endif
+         param->stats_ptr = cpu_to_be32(stats_ptr);
+-        //update opcode and param ptr
++        /* update opcode and param ptr */
+         *(info->opcptr) = UPDATE_ETH_RX_STATS;
+         info->opcptr++;
+         info->opc_count--;
+         info->param_size -= sizeof(struct en_ehash_update_ether_rx_stats);
+         info->paramptr += sizeof(struct en_ehash_update_ether_rx_stats);
+ #endif
++
++	if (info->l2_info.vlan_present)
++		info->flags |= VLAN_STRIP_HM_VALID;
++
++#if 0 /* I am not sure this case is usage scenario or not. ppp part of bridge */
++	/* strip pppoe on ingress if incoming iface is pppoe */
++	if (info->l2_info.pppoe_present)
++		info->flags |= PPPoE_STRIP_HM_VALID;
++#endif
++
++	if (info->l2_info.num_egress_vlan_hdrs)
++	{
++
++		info->flags |= VLAN_ADD_HM_VALID;
++		for (ii = 0; ii < info->l2_info.num_egress_vlan_hdrs; ii++) {
++			info->vlan_ids[ii] =
++				(info->l2_info.egress_vlan_hdrs[ii].tci);
++		}
++	}
++
++        /* strip vlan headers in the ingress packet */
++	if (info->l2_info.vlan_present) {
++		if (insert_remove_vlan_hm(info, ifdesc->itf->index, 0 )) {
++			DPA_ERROR("%s::unable to strip vlan header\n", __FUNCTION__);
++			return FAILURE;
++		}
++	}
++#if 0 /* same here also, this case is usage or not. */
++	if (info->l2_info.pppoe_present)
++	{
++		if (insert_remove_pppoe_hm(info, ifdesc->itf->index)) {
++			DPA_ERROR("%s::unable to strip pppoe header\n", __FUNCTION__);
++			return FAILURE;
++		}
++	}
++#endif
++
++	if (info->l2_info.num_egress_vlan_hdrs) {
++		printk("VLAN hm insert\n");
++		if (create_vlan_ins_hm(info))
++			return FAILURE;
++	}
++#if 0 /* same here also. */
++	if (l2_info->add_pppoe_hdr)  {
++		if (create_pppoe_ins_hm(info))
++			return FAILURE;
++	}
++#endif
++
+ 	if(create_enque_hm(info))
+ 		return FAILURE;
+ 	return SUCCESS;
+@@ -1182,7 +1276,7 @@ static int fill_pppoe_relay_actions(struct ins_entry_info *info,pPPPoE_Info entr
+ int add_l2flow_to_hw(struct L2Flow_entry *entry)
+ {
+ 	int retval;
+-	POnifDesc ifdesc; 
++	POnifDesc ifdesc,oifdesc; 
+ 	uint32_t flags;
+ 	uint32_t fm_idx;
+ 	uint32_t port_idx;
+@@ -1213,6 +1307,12 @@ int add_l2flow_to_hw(struct L2Flow_entry *entry)
+ 			__FUNCTION__, &entry->in_ifname[0]); 
+                 return FAILURE;
+ 	}
++
++	if((oifdesc = get_onif_by_name(&entry->out_ifname[0])) == NULL) {
++		DPA_ERROR("%s::unable to validate iface %s\n", __FUNCTION__,
++				&entry->out_ifname[0]);
++                return FAILURE;
++	}
+ 	//get egress FQID 
+ 	if (dpa_get_tx_fqid_by_name(&entry->out_ifname[0], &fqid)) {
+ 		DPA_ERROR("%s::unable to get tx params\n",
+@@ -1228,6 +1328,7 @@ int add_l2flow_to_hw(struct L2Flow_entry *entry)
+ 	}
+ 	info->td = td;
+ 	tbl_entry = NULL;
++	info->entry = entry;
+ 	//allocate hw entry
+ 	entry->ct = (struct hw_ct *)kzalloc(sizeof(struct hw_ct) , GFP_KERNEL);
+ 	if (!entry->ct) {
+@@ -1238,6 +1339,20 @@ int add_l2flow_to_hw(struct L2Flow_entry *entry)
+ 	ct = entry->ct;
+ 	ct->handle = NULL;
+ 	ct->td = td;
++
++	/* Get ingress l2 information */
++	if (dpa_check_for_logical_iface_types(ifdesc->itf, NULL, &info->l2_info, NULL)) {
++		DPA_ERROR("%s::get_iface_type failed iface %d\n", __FUNCTION__,  ifdesc->itf->index);
++		goto err_ret;
++	} 
++
++	/* Get egress l2 information */
++	if (dpa_get_tx_l2info_by_itf(&info->l2_info, oifdesc))
++	{
++		DPA_ERROR("%s::unable to get tx params\n",__FUNCTION__);
++		goto err_ret;
++	}
++
+ 	//allocate hash table entry
+         tbl_entry = ExternalHashTableAllocEntry(info->td);
+         if (!tbl_entry) {
+@@ -1291,41 +1406,12 @@ int add_l2flow_to_hw(struct L2Flow_entry *entry)
+ 	info->l2_info.mtu = 0xffff;
+ 	//fix fqid
+ 	info->l2_info.fqid = fqid;
+-#ifdef INCLUDE_ETHER_IFSTATS
+-	{
+-		uint32_t rxidx;
+-		uint32_t txidx;
+ 
+-		if (dpa_get_ifstatsinfo_by_name(&entry->out_ifname[0],
+-			&rxidx, &txidx)) {
+-                	DPA_ERROR("%s::unable to get ifstats info for iface %s\n",
+-                                __FUNCTION__, &entry->out_ifname[0]);
+-			
+-                	goto err_ret;
+-		}
+-		//provide the egress interface tx stats index
+-		info->l2_info.ether_stats_offset = txidx;	
+-		//add ingress eth stats 	
+-		if (dpa_get_ifstatsinfo_by_name(&entry->in_ifname[0],
+-                        &rxidx, &txidx)) {
+-                        DPA_ERROR("%s::unable to get ifstats info for iface %s\n",
+-                                __FUNCTION__, &entry->in_ifname[0]);
+-
+-                        goto err_ret;
+-                }
+-		//fill actions required by entry
+-        	if (fill_bridge_actions(info, rxidx)) {
+-                	DPA_ERROR("%s::unable to fill actions\n", __FUNCTION__);
+-                	goto err_ret;
+-        	}
+-	}
+-#else
+-	//fill actions required by entry
+-        if (fill_bridge_actions(info, 0)) {
++	/* fill actions required by entry*/
++        if (fill_bridge_actions(info)) {
+                 DPA_ERROR("%s::unable to fill actions\n", __FUNCTION__);
+                 goto err_ret;
+         }
+-#endif
+ 	//add entry to table
+ 	retval = ExternalHashTableAddKey(info->td, 
+ 		(sizeof(struct ethernet_key) + 1), tbl_entry);
+diff --git a/devman.c b/devman.c
+index 443462b..a50ad03 100755
+--- a/devman.c
++++ b/devman.c
+@@ -557,8 +557,83 @@ int cdx_check_rx_iface_type_vlan(struct _itf *input_itf)
+ 	}
+ 	return 0;
+ }
+-			
+-static int dpa_check_for_logical_iface_types(struct _itf *input_itf, 
++
++int dpa_get_tx_l2info_by_itf(struct dpa_l2hdr_info *l2_info, POnifDesc itf)
++{
++
++        uint32_t itf_id;
++        struct dpa_iface_info *iface_info;
++        struct dpa_iface_info *parent;
++
++	spin_lock(&dpa_devlist_lock);
++
++	itf_id = itf->itf->index;
++	iface_info = dpa_get_ifinfo_by_itfid(itf_id);
++	while (1) {
++		if (!iface_info)
++			break;
++
++		/* search list for matching id */
++		if (iface_info->if_flags & IF_TYPE_VLAN) {
++			if (l2_info->num_egress_vlan_hdrs == DPA_CLS_HM_MAX_VLANs) {
++				DPA_INFO("%s::too many vlan headers \n", __FUNCTION__); 
++				break;
++			}
++			/* move to parent interface */
++			parent = iface_info->vlan_info.parent;
++#ifdef DEVMAN_DEBUG
++			DPA_INFO("%s::moving to parent iface %s id %d\n",
++					__FUNCTION__, parent->name, parent->itf_id);
++#endif
++			l2_info->egress_vlan_hdrs[l2_info->num_egress_vlan_hdrs].tpid = 0x8100;
++			l2_info->egress_vlan_hdrs[l2_info->num_egress_vlan_hdrs].tci = 
++				iface_info->vlan_info.vlan_id;
++#ifdef INCLUDE_VLAN_IFSTATS
++			/* get stats index also */
++			l2_info->vlan_stats_offsets[l2_info->num_egress_vlan_hdrs] = 
++				iface_info->txstats_index;	
++#ifdef DEVMAN_DEBUG
++			printk("%s::vlan tx stats offset %d\n", __FUNCTION__,
++					iface_info->txstats_index);
++#endif
++#endif
++			l2_info->num_egress_vlan_hdrs++;
++			iface_info = parent;
++			continue;
++		} 
++
++#if 0
++		if (iface_info->if_flags & IF_TYPE_PPPOE) {
++			/* move to parent interface */
++			parent = iface_info->pppoe_info.parent;
++#ifdef DEVMAN_DEBUG
++			DPA_INFO("%s::moving to parent iface %s id %d\n",
++					__FUNCTION__, parent->name, parent->itf_id);
++#endif
++			l2_info->pppoe_sess_id = 
++				iface_info->pppoe_info.session_id;
++			l2_info->add_pppoe_hdr = 1;
++			memcpy(&l2_info->ac_mac_addr[0], 
++					iface_info->pppoe_info.mac_addr, ETH_ALEN);
++#ifdef INCLUDE_PPPOE_IFSTATS
++			/* save index for tx stats */
++			l2_info->pppoe_stats_offset = iface_info->txstats_index;
++#endif
++			iface_info = parent;
++			continue;
++		} 
++#endif
++		else {
++			DPA_INFO("%s::iface type %x not supported \n",
++					__FUNCTION__, iface_info->if_flags);
++			break;
++		}
++	}
++	spin_unlock(&dpa_devlist_lock);
++	return SUCCESS;
++}
++
++int dpa_check_for_logical_iface_types(struct _itf *input_itf, 
+ 			struct _itf *underlying_input_itf,
+ 			struct dpa_l2hdr_info *l2_info,
+ 			struct dpa_l3hdr_info *l3_info)
+@@ -1371,7 +1446,7 @@ int dpa_get_tx_fqid_by_name(char *name, uint32_t *fqid)
+ 	return -1;
+ }
+ 
+-int dpa_get_ifstatsinfo_by_name(char *name, uint32_t *rxstats_index, 
++int dpa_get_ifstatsinfo_by_itf_id(uint32_t itf_id, uint32_t *rxstats_index, 
+ 		uint32_t *txstats_index)
+ {
+ #ifdef INCLUDE_IFSTATS_SUPPORT
+@@ -1384,7 +1459,7 @@ int dpa_get_ifstatsinfo_by_name(char *name, uint32_t *rxstats_index,
+ 	while (1) {
+                 if (!iface_info)
+                         break;	
+-		if (strcmp (iface_info->name, name) == 0) {
++		if (iface_info->itf_id == itf_id) {
+ 			*rxstats_index = iface_info->rxstats_index;	
+ 			*txstats_index = iface_info->txstats_index;		
+ 			retval = 0;
+diff --git a/devman.h b/devman.h
+index d530112..ad54da1 100644
+--- a/devman.h
++++ b/devman.h
+@@ -16,3 +16,10 @@ int dpa_get_vlan_iface_stats_entries(uint32_t iif_index,
+ int dpa_get_ether_iface_stats_entries(uint32_t iif_index,
+ 			uint32_t underlying_iif_index,
+ 			uint8_t *offset, uint32_t type);
++int dpa_get_ifstatsinfo_by_itf_id(uint32_t itf_id, uint32_t *rxstats_index, 
++		uint32_t *txstats_index);
++int dpa_get_tx_l2info_by_itf(struct dpa_l2hdr_info *l2_info, POnifDesc itf);
++int dpa_check_for_logical_iface_types(struct _itf *input_itf, 
++			struct _itf *underlying_input_itf,
++			struct dpa_l2hdr_info *l2_info,
++			struct dpa_l3hdr_info *l3_info);
+diff --git a/layer2.c b/layer2.c
+index 6a99b2b..9807885 100644
+--- a/layer2.c
++++ b/layer2.c
+@@ -178,6 +178,13 @@ U16 itf_get_phys_port(struct _itf *itf)
+ 	return ((struct physical_port *)itf)->id;
+ }
+ 
++struct _itf *itf_get_phys_itf(struct _itf *itf)
++{
++	while (itf->phys)
++		itf = itf->phys;
++
++	return itf;
++}
+ 
+ /**
+  * __L2_route_remove()
+diff --git a/layer2.h b/layer2.h
+index b8d1b57..97a4655 100755
+--- a/layer2.h
++++ b/layer2.h
+@@ -112,6 +112,7 @@ void remove_onif_by_name(U8 *itf_name);
+ void remove_onif_by_index(U32 if_index);
+ void remove_onif(POnifDesc onif_desc);
+ U16 itf_get_phys_port(struct _itf *itf);
++struct _itf *itf_get_phys_itf(struct _itf *itf);
+ 
+ 
+ 
+-- 
+2.17.1
+

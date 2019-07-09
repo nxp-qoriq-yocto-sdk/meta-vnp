@@ -1,0 +1,47 @@
+From 9279363f68f199d0020576a8114026734e2166d7 Mon Sep 17 00:00:00 2001
+From: Madhu Koriginja <madhu.koriginja@nxp.com>
+Date: Thu, 23 May 2019 19:57:48 +0530
+Subject: [PATCH 5/6] DNCPE-1581: Incorrect function calls.
+
+create_routing_hm() call before create_pppoe_ins_hm() call is
+calling create_pppoe_ins_hm() function. So removing extra call.
+create_pppoe_remove_hm() call does not take care of stats, so
+replaced with insert_remove_pppoe_hm() call.
+
+Bitbucket pull request link:
+https://bitbucket.sw.nxp.com/projects/DNCPE/repos/cdx/pull-requests/170/overview
+---
+ cdx_ehash.c | 10 +---------
+ 1 file changed, 1 insertion(+), 9 deletions(-)
+
+diff --git a/cdx_ehash.c b/cdx_ehash.c
+index 6183682..5526a6d 100755
+--- a/cdx_ehash.c
++++ b/cdx_ehash.c
+@@ -2185,14 +2185,6 @@ int fill_ipsec_actions(PSAEntry entry, struct ins_entry_info *info,
+                                         __FUNCTION__);
+                         	return FAILURE;
+                 }
+-                //deal with pppoe header insertion
+-                if (info->l2_info.add_pppoe_hdr) {
+-                        if (create_pppoe_ins_hm(info)) {
+-                                DPA_ERROR("%s::failed to create pppoe insert HM\n",
+-                                        __FUNCTION__);
+-                        	return FAILURE;
+-                        }
+-                }
+ 		//insert tunnel header
+                 if (info->l3_info.add_tnl_header) {
+                         if (create_tunnel_insert_hm(info)) {
+@@ -2238,7 +2230,7 @@ int fill_ipsec_actions(PSAEntry entry, struct ins_entry_info *info,
+                 }
+                 //strip pppoe headers in the ingress packet
+                 if (info->l2_info.pppoe_present) {
+-                        if (create_pppoe_remove_hm(info)) {
++                        if (insert_remove_pppoe_hm(info, info->sa_itf_id)) {
+                                 DPA_ERROR("%s::unable to add pppoe rmv manip\n",
+                                         __FUNCTION__);
+                         	return FAILURE;
+-- 
+2.17.1
+

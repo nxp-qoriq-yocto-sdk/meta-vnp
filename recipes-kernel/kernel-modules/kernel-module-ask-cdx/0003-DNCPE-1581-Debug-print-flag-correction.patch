@@ -1,0 +1,53 @@
+From ea760124df2eb6a1de48b32a8ea3231f5bbe4790 Mon Sep 17 00:00:00 2001
+From: Madhu Koriginja <madhu.koriginja@nxp.com>
+Date: Thu, 23 May 2019 19:42:39 +0530
+Subject: [PATCH 3/6] DNCPE-1581: Debug print & flag correction
+
+Debug print correction.
+Compilation flag correction.
+
+Bitbucket pull request link:
+https://bitbucket.sw.nxp.com/projects/DNCPE/repos/cdx/pull-requests/170/overview
+---
+ cdx_ehash.c | 4 ++--
+ devman.c    | 2 +-
+ 2 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/cdx_ehash.c b/cdx_ehash.c
+index 6fff76e..6183682 100755
+--- a/cdx_ehash.c
++++ b/cdx_ehash.c
+@@ -1202,7 +1202,7 @@ int add_l2flow_to_hw(struct L2Flow_entry *entry)
+ 	if (dpa_get_fm_port_index(ifdesc->itf->index,0, &fm_idx,
+ 		&port_idx, &portid)) {
+ 		DPA_ERROR("%s::unable to get fmindex for iface %s\n",
+-			__FUNCTION__, &entry->out_ifname[0]);
++			__FUNCTION__, &entry->in_ifname[0]);
+                 return FAILURE;
+ 	}
+ 
+@@ -1210,7 +1210,7 @@ int add_l2flow_to_hw(struct L2Flow_entry *entry)
+ 	td = dpa_get_tdinfo(fm_idx, portid, ETHERNET_TABLE);
+ 	if (td == NULL) {
+ 		DPA_ERROR("%s::unable to get td for iface %s\n",
+-			__FUNCTION__, &entry->out_ifname[0]); 
++			__FUNCTION__, &entry->in_ifname[0]); 
+                 return FAILURE;
+ 	}
+ 	//get egress FQID 
+diff --git a/devman.c b/devman.c
+index b751d79..ff973e9 100755
+--- a/devman.c
++++ b/devman.c
+@@ -1275,7 +1275,7 @@ int dpa_get_tx_info_by_itf(PRouteEntry rt_entry, struct dpa_l2hdr_info *l2_info,
+ 			l2_info->add_pppoe_hdr = 1;
+ 			memcpy(&l2_info->ac_mac_addr[0], 
+ 				iface_info->pppoe_info.mac_addr, ETH_ALEN);
+-#ifdef INCLUDE_VLAN_IFSTATS
++#ifdef INCLUDE_PPPOE_IFSTATS
+ 			//save index for tx stats
+ 			l2_info->pppoe_stats_offset = iface_info->txstats_index;
+ #endif
+-- 
+2.17.1
+

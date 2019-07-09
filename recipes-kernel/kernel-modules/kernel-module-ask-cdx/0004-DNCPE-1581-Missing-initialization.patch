@@ -1,0 +1,58 @@
+From 26d51e625b4191ff230e32638f3380178834f18a Mon Sep 17 00:00:00 2001
+From: Madhu Koriginja <madhu.koriginja@nxp.com>
+Date: Thu, 23 May 2019 19:47:24 +0530
+Subject: [PATCH 4/6] DNCPE-1581: Missing initialization
+
+num_entries initialization is missing in few cases(like if it does
+not match the interface index or it does not went inside ETHERNET
+and WLAN flag check conditions) due to assigning another variable
+max_entries. This extra variable is not required, directly use
+the num_entries.
+
+Bitbucket pull request link:
+https://bitbucket.sw.nxp.com/projects/DNCPE/repos/cdx/pull-requests/170/overview
+---
+ devman.c | 7 ++-----
+ 1 file changed, 2 insertions(+), 5 deletions(-)
+
+diff --git a/devman.c b/devman.c
+index ff973e9..443462b 100755
+--- a/devman.c
++++ b/devman.c
+@@ -1068,15 +1068,13 @@ int dpa_get_num_vlan_iface_stats_entries(uint32_t iif, uint32_t underlying_iif,
+ 					uint32_t *num_entries)
+ {
+         struct dpa_iface_info *iface_info;
+-	uint32_t max_stats;
+ 
+         iface_info = dpa_interface_info;
+-	max_stats = 0;
++	*num_entries = 0;
+ 	while(iface_info) {
+ 		if (iface_info->itf_id  == iif) {
+ check_parent:
+ 			if (iface_info->if_flags & IF_TYPE_ETHERNET) {
+-				*num_entries = max_stats;
+ #ifdef DEVMAN_DEBUG
+ 				printk("%s::eth if, max %d\n", __FUNCTION__, max_stats);
+ #endif
+@@ -1086,7 +1084,6 @@ check_parent:
+ #ifdef DEVMAN_DEBUG
+ 				printk("%s::wlan if, max %d\n", __FUNCTION__, max_stats);
+ #endif
+-				*num_entries = max_stats;
+                                 return SUCCESS;		
+ 			}
+ 			if (iface_info->if_flags & IF_TYPE_VLAN)
+@@ -1094,7 +1091,7 @@ check_parent:
+ #ifdef DEVMAN_DEBUG
+ 				printk("%s::vlan if, max %d\n", __FUNCTION__, max_stats);
+ #endif
+-				max_stats++;
++				(*num_entries)++;
+ 				iface_info = iface_info->vlan_info.parent;
+ 				goto check_parent;
+ 			}
+-- 
+2.17.1
+

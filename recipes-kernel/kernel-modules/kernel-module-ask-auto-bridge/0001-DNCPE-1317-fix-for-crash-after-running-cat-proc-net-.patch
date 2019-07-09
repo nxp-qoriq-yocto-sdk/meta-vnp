@@ -1,0 +1,36 @@
+From 27c78079fd10444f57e4ca45d78b87e325054404 Mon Sep 17 00:00:00 2001
+From: Anuj Batham <anuj.batham@nxp.com>
+Date: Thu, 13 Sep 2018 16:50:08 +0530
+Subject: [PATCH] DNCPE-1317: fix for crash after running cat /proc/net/abm
+ command
+
+Added 'struct seq_net_private p' structure member to abm_seq_state structure
+as it is required by netns. BUG_ON(size < sizeof(*p)) condition check in seq_open_net
+function was there because it expects at least 'struct seq_net_private p' member in
+'abm_seq_state' structure so removing temporary 'tmp' variable added to the abm_seq_state
+structure to meet the minimum structure size check in seq_open_net function
+
+pull req: https://bitbucket.sw.nxp.com/projects/DNCPE/repos/abm/pull-requests/23/overview
+---
+ auto_bridge.c | 4 +---
+ 1 file changed, 1 insertion(+), 3 deletions(-)
+
+diff --git a/auto_bridge.c b/auto_bridge.c
+index 97a0d34..c7a5187 100644
+--- a/auto_bridge.c
++++ b/auto_bridge.c
+@@ -1195,10 +1195,8 @@ static void abm_l2flow_table_exit(void)
+ ****************************************************************************/
+ 
+ struct abm_seq_state{
++	struct seq_net_private p;  /* Do not remove this, netns depends on it*/
+ 	unsigned int bucket;
+-#ifdef CONFIG_NET_NS
+-	unsigned int tmp;
+-#endif
+ };
+ 
+ struct l2flowTable * abm_get_first(struct seq_file *seq)
+-- 
+2.7.4
+

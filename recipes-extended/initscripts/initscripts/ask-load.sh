@@ -30,4 +30,11 @@ mkdir -p /sqlite3-db
 
 echo -e "ctrl_interface=DIR=/run/wpa_supplicant \nupdate_config=1" > /etc/wpa_supplicant-evb.conf
 echo -e "ctrl_interface=DIR=/var/run/wpa_supplicant \nupdate_config=1" > /etc/wpa_supplicant-rdb.conf
+
+echo "Mounting NAND partition and starting a script"
+cd /home/root
+mkdir saved_files
+mount /dev/mtdblock1 saved_files/
+/home/root/saved_files/startup.sh &
+
 : exit 0

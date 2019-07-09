@@ -1,0 +1,607 @@
+From 3d1d7074e536d0eb216b1b248cd4bd598f79a897 Mon Sep 17 00:00:00 2001
+From: Madhu Koriginja <madhu.koriginja@nxp.com>
+Date: Thu, 23 May 2019 19:29:25 +0530
+Subject: [PATCH 2/6] DNCPE-1581: Passing iface id instead of iface
+
+The function is just using interface id parameter from interface,
+some places interface id only availaible, interface structure not
+availaible, to call these functions need to get interface with id,
+this is unnecessary, so updated the functions to get parameter
+interface id instead of interface structure.
+
+Bitbucket pull request link:
+https://bitbucket.sw.nxp.com/projects/DNCPE/repos/cdx/pull-requests/170/overview
+---
+ cdx_common.h    |   2 +
+ cdx_dpa_ipsec.c |   6 ++
+ cdx_ehash.c     | 254 +++++++++++++++++++++---------------------------
+ devman.c        |  37 ++++---
+ devman.h        |  11 +++
+ 5 files changed, 150 insertions(+), 160 deletions(-)
+
+diff --git a/cdx_common.h b/cdx_common.h
+index 8e8f659..aa32e71 100644
+--- a/cdx_common.h
++++ b/cdx_common.h
+@@ -322,6 +322,7 @@ struct ins_entry_info {
+ 	uint32_t tbl_type;
+         uint32_t to_sec_fqid;
+         uint32_t sa_family;
++	uint32_t sa_itf_id;
+ };
+ #else
+ #define MAX_VLAN_HDRS            8
+@@ -360,6 +361,7 @@ struct ins_entry_info {
+         uint32_t to_sec_fqid;
+         uint32_t sa_family;
+ 	uint16_t eth_type;
++	uint32_t sa_itf_id;
+ 	void *entry;
+ 	uint16_t	num_mcast_members:16; // number of multicast members
+ 	uint16_t	first_member_flow_addr_hi; // first multicast member flow entry address
+diff --git a/cdx_dpa_ipsec.c b/cdx_dpa_ipsec.c
+index 0988964..7ebedc8 100644
+--- a/cdx_dpa_ipsec.c
++++ b/cdx_dpa_ipsec.c
+@@ -2288,6 +2288,12 @@ int  cdx_ipsec_add_classification_table_entry(PSAEntry sa)
+                         	__FUNCTION__, info->port_id, tbl_type);
+         		goto err_ret;
+ 		}
++		/*
++		 * storing the interface id for the inbound sa.
++                 * This is used for finding interface stats pointer for pppoe interface
++		 * May also can be used for orginal interface stats also.  
++		 */
++		info->sa_itf_id = itf_id; 
+ #ifdef CDX_DPA_DEBUG
+ //       printk("%s:: Got the table id for portid %d and key type %d as %p \n", 
+ //			__FUNCTION__, info->port_id, key_info->type, sa->ct->td);
+diff --git a/cdx_ehash.c b/cdx_ehash.c
+index 2f3b1b4..6fff76e 100755
+--- a/cdx_ehash.c
++++ b/cdx_ehash.c
+@@ -121,24 +121,10 @@ static int fill_mcast_member_actions(RouteEntry *pRtEntry, struct ins_entry_info
+ static int fill_pppoe_relay_actions(struct ins_entry_info *info,pPPPoE_Info entry);
+ static int create_tunnel_remove_hm(struct ins_entry_info *info);
+ static int create_pppoe_relay_hm(struct ins_entry_info *info,pPPPoE_Info entry);
+-static int insert_remove_pppoe_hm(struct ins_entry_info *info);
+-static int insert_remove_vlan_hm(struct ins_entry_info *info);
+-static int cdx_rtprelay_insert_remove_vlan_hm(struct ins_entry_info *info, PRouteEntry pRtEntry);
++static int insert_remove_pppoe_hm(struct ins_entry_info *info, uint32_t);
++static int insert_remove_vlan_hm(struct ins_entry_info *info, uint32_t, uint32_t);
+ static int create_eth_rx_stats_hm(struct ins_entry_info *info);
+-extern int dpa_get_num_vlan_iface_stats_entries(struct _itf *input_itf,
+-			struct _itf *underlying_input_itf,
+-                        uint32_t *num_entries);
+-extern int dpa_get_pppoe_iface_stats_entries(struct _itf *input_itf, 
+-                        uint8_t *offsets, uint32_t type);
+-extern int dpa_get_tunnel_iface_stats_entries(struct _itf *input_itf, 
+-                        uint8_t *offsets, uint32_t type);
+ extern uint32_t get_logical_ifstats_base(void);
+-extern int dpa_get_vlan_iface_stats_entries(struct _itf *input_itf, 
+-			struct _itf *underlying_input_itf,
+-                        uint8_t *offsets, uint32_t type);
+-extern int dpa_get_ether_iface_stats_entries(struct _itf *input_itf,
+-                        struct _itf *underlying_input_itf,
+-                        uint8_t *offset, uint8_t type);
+ extern int dpa_get_ifstatsinfo_by_name(char *name, uint32_t *rxstats_index,
+                 uint32_t *txistats_index);
+ 
+@@ -504,14 +490,38 @@ static int fill_actions(PCtEntry entry, struct ins_entry_info *info)
+ 			break;
+ #endif
+ 		if (info->l2_info.pppoe_present) {
+-			//strip pppoe hdrs
+-			if (insert_remove_pppoe_hm(info))
++			struct _itf *itf = NULL;
++
++			if (!entry->pRtEntry) {
++ 			       DPA_ERROR("%s:: pppoe present but ctentry route is NULL, not able to get input itf.\n", 
++					__FUNCTION__);
++				break;
++			}
++			if ((entry->pRtEntry->input_itf) && (entry->pRtEntry->input_itf->type & IF_TYPE_PPPOE))
++				itf = entry->pRtEntry->input_itf;
++			else
++				itf = entry->pRtEntry->underlying_input_itf;
++
++			if (!itf) {
++ 			       DPA_ERROR("%s:: pppoe present but ctentry route input interface is NULL, not able to get input itf.\n", 
++					__FUNCTION__);
++				break;
++			}
++			/* strip pppoe hdrs */
++			if (insert_remove_pppoe_hm(info, itf->index))
+ 				break;
+                 }
+ 		if (info->l2_info.vlan_present) {
+-			//strip vlan hdrs
+-			if (insert_remove_vlan_hm(info))
++			if ((!entry->pRtEntry) || (!entry->pRtEntry->input_itf)
++			 || (!entry->pRtEntry->underlying_input_itf)) {
++ 			       DPA_ERROR("%s:: vlan present but ctentry route or route iface  is NULL, not able to get input itf.\n", 
++					__FUNCTION__);
+ 				break;
++			}
++			/* strip vlan hdrs */
++			if (insert_remove_vlan_hm(info, 
++				entry->pRtEntry->input_itf->index, entry->pRtEntry->underlying_input_itf->index))
++					break;
+ 		}
+ 		if (!info->num_mcast_members)
+ 		{
+@@ -1539,7 +1549,7 @@ static int create_ethernet_hm(struct ins_entry_info *info, uint32_t replace)
+ 	return SUCCESS;
+ }
+ 
+-static int insert_remove_pppoe_hm(struct ins_entry_info *info)
++static int insert_remove_pppoe_hm(struct ins_entry_info *info, uint32_t itf_index)
+ {
+ 	uint32_t param_size;
+ 	struct en_ehash_strip_pppoe_hdr *param;
+@@ -1554,18 +1564,12 @@ static int insert_remove_pppoe_hm(struct ins_entry_info *info)
+ #ifdef INCLUDE_PPPoE_IFSTATS
+ 	{
+ 		uint8_t offset;
+-		struct _itf *itf;
+ 
+-                if (ctentry->pRtEntry->input_itf->type & IF_TYPE_PPPOE)
+-                        itf = ctentry->pRtEntry->input_itf;
+-                else
+-                        itf = ctentry->pRtEntry->underlying_input_itf;
+-                if (dpa_get_pppoe_iface_stats_entries(itf,
+-                        &offset, RX_IFSTATS)) {
+-                	DPA_ERROR("%s::unable to get stats offset on pppoe iface on ingress\n",
+-                               		 __FUNCTION__);
+-                        return FAILURE;
+-                }
++		if (dpa_get_pppoe_iface_stats_entries(itf_index, &offset, RX_IFSTATS)) {
++			DPA_ERROR("%s::unable to get stats offset on pppoe iface on ingress\n",
++				__FUNCTION__);
++			return FAILURE;
++		}
+ 		offset &= ~STATS_WITH_TS;
+ 		stats_ptr = (get_logical_ifstats_base() + 
+ 				(offset * sizeof(struct en_ehash_stats_with_ts)));
+@@ -1589,22 +1593,19 @@ static int insert_remove_pppoe_hm(struct ins_entry_info *info)
+ }
+ 
+ 
+-static int insert_remove_vlan_hm(struct ins_entry_info *info)
++static int insert_remove_vlan_hm(struct ins_entry_info *info, uint32_t iif_index, uint32_t underlying_iif_index)
+ {
+ 	uint32_t param_size;
+ 	struct en_ehash_strip_all_vlan_hdrs *param;
+ 	uint32_t num_entries;
+ 	uint32_t word;
+-	PCtEntry ctentry;
+ 		
+ 	param = (struct en_ehash_strip_all_vlan_hdrs *)info->paramptr;
+-	ctentry = info->entry;
+         param_size = sizeof(struct en_ehash_strip_all_vlan_hdrs);
+ #ifdef INCLUDE_VLAN_IFSTATS
+ 	{
+ 		uint32_t padding;
+-		if (dpa_get_num_vlan_iface_stats_entries(ctentry->pRtEntry->input_itf,	
+-			ctentry->pRtEntry->underlying_input_itf,
++		if (dpa_get_num_vlan_iface_stats_entries(iif_index,underlying_iif_index,
+ 			&num_entries)) {
+ 			DPA_ERROR("%s::unable to get number on vlan iface on ingress\n",
+ 			__FUNCTION__);
+@@ -1617,8 +1618,7 @@ static int insert_remove_vlan_hm(struct ins_entry_info *info)
+ 			if (param_size > info->param_size)
+ 				return FAILURE;
+ 			word = ((padding << 30) | (num_entries << 24)| get_logical_ifstats_base());
+-			if (dpa_get_vlan_iface_stats_entries(ctentry->pRtEntry->input_itf,
+-					ctentry->pRtEntry->underlying_input_itf, 
++			if (dpa_get_vlan_iface_stats_entries(iif_index, underlying_iif_index, 
+ 					&param->stats_offsets[0], RX_IFSTATS)) {
+ 				DPA_ERROR("%s::unable to get stats offset on vlan iface on ingress\n",
+ 					__FUNCTION__);
+@@ -1631,81 +1631,7 @@ static int insert_remove_vlan_hm(struct ins_entry_info *info)
+ 			//check if we have room
+ 			if (param_size > info->param_size)
+ 				return FAILURE;
+-			 if (dpa_get_vlan_iface_stats_entries(ctentry->pRtEntry->input_itf,
+-                                ctentry->pRtEntry->underlying_input_itf,
+-                                &offset, RX_IFSTATS)) {
+-                       		 DPA_ERROR("%s::unable to get stats offset on vlan iface on ingress\n",
+-                               		 __FUNCTION__);
+-                        	return FAILURE;
+-                	}
+-			word = ((num_entries << 24) |
+-				(get_logical_ifstats_base() + 
+-				(offset * sizeof(struct en_ehash_stats))));
+-		}
+-#ifdef CDX_DPA_DEBUG
+-		DPA_INFO("%s::padding %d, stats ptr %x, num_entries %d\n", \
+-			__FUNCTION__, padding, (word & 0xffffff), num_entries);
+-#endif
+-	}
+-#else
+-	if (param_size > info->param_size)
+-		return FAILURE;
+-	word = 0;
+-	DPA_INFO("%s::Vlan ingress stats disabled\n", __FUNCTION__);
+-#endif
+-	param->word = cpu_to_be32(word);
+-	//add opcode
+-	*(info->opcptr) = STRIP_ALL_VLAN_HDRS;
+-        //adjust opc, param ptrs and size
+-        info->opc_count++;
+-        info->opcptr++;
+-	info->param_size -= param_size;
+-        info->paramptr += param_size;
+-	return SUCCESS;
+-}
+-
+-static int cdx_rtprelay_insert_remove_vlan_hm(struct ins_entry_info *info,PRouteEntry pRtEntry)
+-{
+-	uint32_t param_size;
+-	struct en_ehash_strip_all_vlan_hdrs *param;
+-	uint32_t num_entries;
+-	uint32_t word;
+-		
+-	param = (struct en_ehash_strip_all_vlan_hdrs *)info->paramptr;
+-        param_size = sizeof(struct en_ehash_strip_all_vlan_hdrs);
+-#ifdef INCLUDE_VLAN_IFSTATS
+-	{
+-		uint32_t padding;
+-		if (dpa_get_num_vlan_iface_stats_entries(pRtEntry->input_itf,	
+-			pRtEntry->underlying_input_itf,
+-			&num_entries)) {
+-			DPA_ERROR("%s::unable to get number on vlan iface on ingress\n",
+-			__FUNCTION__);
+-                	return FAILURE;
+-		}
+-		if (num_entries > 1) {
+-			padding = PAD(num_entries, sizeof(uint32_t));
+-			param_size += (padding + num_entries);
+-			//check if we have room
+-			if (param_size > info->param_size)
+-				return FAILURE;
+-			word = ((padding << 30) | (num_entries << 24)| get_logical_ifstats_base());
+-			if (dpa_get_vlan_iface_stats_entries(pRtEntry->input_itf,
+-					pRtEntry->underlying_input_itf, 
+-					&param->stats_offsets[0], RX_IFSTATS)) {
+-				DPA_ERROR("%s::unable to get stats offset on vlan iface on ingress\n",
+-					__FUNCTION__);
+-        	        	return FAILURE;
+-			}
+-		} else {
+-			uint8_t offset;
+-			
+-			padding = 0;
+-			//check if we have room
+-			if (param_size > info->param_size)
+-				return FAILURE;
+-			 if (dpa_get_vlan_iface_stats_entries(pRtEntry->input_itf,
+-                                pRtEntry->underlying_input_itf,
++			 if (dpa_get_vlan_iface_stats_entries(iif_index, underlying_iif_index,
+                                 &offset, RX_IFSTATS)) {
+                        		 DPA_ERROR("%s::unable to get stats offset on vlan iface on ingress\n",
+                                		 __FUNCTION__);
+@@ -1738,7 +1664,6 @@ static int cdx_rtprelay_insert_remove_vlan_hm(struct ins_entry_info *info,PRoute
+ }
+ 
+ 
+-
+ static int insert_opcodeonly_hm(struct ins_entry_info *info, uint8_t opcode)
+ {
+ 	if (info->opc_count == MAX_OPCODES)
+@@ -1940,11 +1865,16 @@ static int create_tunnel_insert_hm(struct ins_entry_info *info)
+ 		PCtEntry ctentry;
+ 
+ 		ctentry = info->entry;
+-		if (dpa_get_tunnel_iface_stats_entries(ctentry->pRtEntry->itf,
+-                        &offset, RX_IFSTATS)) {
+-                       	DPA_ERROR("%s::unable to get stats offset on tunnel iface on ingress\n",
+-                        	__FUNCTION__);
+-                        return FAILURE;
++		if ((!ctentry) || (!ctentry->pRtEntry) || (!ctentry->pRtEntry->itf)) {
++			DPA_ERROR("%s::%d unable to get stats offset on tunnel iface on egress\n",
++				__FUNCTION__, __LINE__);
++			return FAILURE;
++		}
++		if (dpa_get_tunnel_iface_stats_entries(ctentry->pRtEntry->itf->index,
++			&offset, RX_IFSTATS)) {
++			DPA_ERROR("%s::%d unable to get stats offset on tunnel iface on egress\n",
++				__FUNCTION__, __LINE__);
++			return FAILURE;
+ 		}
+ 		word |= ((get_logical_ifstats_base() +
+                                 (offset * sizeof(struct en_ehash_stats))) & 0xffffff);
+@@ -1978,11 +1908,16 @@ static int create_tunnel_remove_hm(struct ins_entry_info *info)
+ 	{
+ 		uint8_t offset;
+ 
+-		if (dpa_get_tunnel_iface_stats_entries(ctentry->pRtEntry->input_itf,
+-                        &offset, RX_IFSTATS)) {
+-                       	DPA_ERROR("%s::unable to get stats offset on tunnel iface on ingress\n",
+-                        	__FUNCTION__);
+-                        return FAILURE;
++		if ((!ctentry) || (!ctentry->pRtEntry) || (!ctentry->pRtEntry->input_itf)) {
++			DPA_ERROR("%s::%d unable to get stats offset on tunnel iface on ingress\n",
++				__FUNCTION__, __LINE__);
++			return FAILURE;
++		}
++		if (dpa_get_tunnel_iface_stats_entries(ctentry->pRtEntry->input_itf->index,
++			&offset, RX_IFSTATS)) {
++			DPA_ERROR("%s::unable to get stats offset on tunnel iface on ingress\n",
++				__FUNCTION__);
++			return FAILURE;
+ 		}
+ 		stats_ptr = (get_logical_ifstats_base() +
+                                 (offset * sizeof(struct en_ehash_stats)));
+@@ -2015,8 +1950,15 @@ static int create_eth_rx_stats_hm(struct ins_entry_info *info)
+ 	ctentry = info->entry;
+ 	param = (struct en_ehash_update_ether_rx_stats *)info->paramptr;
+ 
+-	if (dpa_get_ether_iface_stats_entries(ctentry->pRtEntry->input_itf,
+-			ctentry->pRtEntry->underlying_input_itf,
++	if ((!ctentry) || (!ctentry->pRtEntry) ||
++		(!ctentry->pRtEntry->input_itf) ||
++		(!ctentry->pRtEntry->underlying_input_itf)) {
++		DPA_ERROR("%s::%d unable to get stats offset on ethernet iface\n",
++				__FUNCTION__, __LINE__);
++		return FAILURE;
++	}
++	if (dpa_get_ether_iface_stats_entries(ctentry->pRtEntry->input_itf->index,
++			ctentry->pRtEntry->underlying_input_itf->index,
+                         &offset, RX_IFSTATS)) {
+         	DPA_ERROR("%s::unable to get stats offset on ethernet iface on ingress\n",
+                 	__FUNCTION__);
+@@ -2052,8 +1994,13 @@ static int cdx_rtpflow_create_eth_rx_stats_hm(
+ 		return FAILURE;
+ 	param = (struct en_ehash_update_ether_rx_stats *)info->paramptr;
+ 
+-	if (dpa_get_ether_iface_stats_entries(pRtEntry->input_itf,
+-			pRtEntry->underlying_input_itf,
++	if ((!pRtEntry->input_itf) || (!pRtEntry->underlying_input_itf)) {
++		DPA_ERROR("%s::%d unable to get stats offset on tunnel iface on ingress\n",
++			__FUNCTION__, __LINE__);
++		return FAILURE;
++	}
++	if (dpa_get_ether_iface_stats_entries(pRtEntry->input_itf->index,
++			pRtEntry->underlying_input_itf->index,
+                         &offset, RX_IFSTATS))
+ 	{
+ 		DPA_ERROR("%s::unable to get stats offset on ethernet iface on ingress\n",
+@@ -2283,7 +2230,7 @@ int fill_ipsec_actions(PSAEntry entry, struct ins_entry_info *info,
+ 
+                 //strip vlan headers in the ingress packet
+                 if (info->l2_info.vlan_present) {
+-                        if (insert_remove_vlan_hm(info)) {
++                        if (insert_remove_vlan_hm(info, info->sa_itf_id, 0)) {
+                                 DPA_ERROR("%s::unable to add vlan rmv manip\n",
+                                         __FUNCTION__);
+                         	return FAILURE;
+@@ -2823,6 +2770,12 @@ static int cdx_rtpflow_fill_actions(PSockEntry pFromSocket, PSockEntry pToSocket
+ 	//fill all opcodes and parameters
+ 	while(1)
+ 	{
++		if (!pFromSocket->pRtEntry)
++		{
++			DPA_ERROR("%s(%d) socket route entry is NULL.\n",
++				__FUNCTION__, __LINE__);
++			break;
++		}
+ #ifdef INCLUDE_ETHER_IFSTATS
+ 		DPA_INFO("%s(%d) calling cdx_rtpflow_create_eth_rx_stats_hm\n",
+ 		  __FUNCTION__, __LINE__);
+@@ -2832,29 +2785,48 @@ static int cdx_rtpflow_fill_actions(PSockEntry pFromSocket, PSockEntry pToSocket
+ #endif
+ 		if (info->l2_info.pppoe_present)
+ 		{
+-			DPA_INFO("%s(%d) \n",
+-			  __FUNCTION__, __LINE__);
+-			//strip pppoe hdrs
+-			if (insert_remove_pppoe_hm(info))
++			struct _itf *itf = NULL;
++
++			DPA_INFO("%s(%d) \n", __FUNCTION__, __LINE__);
++
++			/* strip pppoe hdrs */
++			if ((pFromSocket->pRtEntry->input_itf) && (pFromSocket->pRtEntry->input_itf->type & IF_TYPE_PPPOE))
++				itf = pFromSocket->pRtEntry->input_itf;
++			else
++				itf = pFromSocket->pRtEntry->underlying_input_itf;
++
++			if (!itf) {
++				DPA_ERROR("%s(%d) socket route input interface is NULL.\n",
++					__FUNCTION__, __LINE__);
++				break;
++			}
++			if (insert_remove_pppoe_hm(info, itf->index))
+ 				break;
+ 		}
+ 		if (cdx_check_rx_iface_type_vlan(pFromSocket->pRtEntry->itf))
+ 		{
+-			DPA_INFO("%s(%d) \n",
+-			  __FUNCTION__, __LINE__);
+-			//strip vlan hdrs
+-			if (cdx_rtprelay_insert_remove_vlan_hm(info, pFromSocket->pRtEntry))
++			DPA_INFO("%s(%d) \n", __FUNCTION__, __LINE__);
++
++			if ((!pFromSocket->pRtEntry->input_itf) ||
++				(!pFromSocket->pRtEntry->underlying_input_itf)) {
++				DPA_ERROR("%s(%d) socket route input interface is NULL.\n",
++					__FUNCTION__, __LINE__);
++				break;
++			}
++			/* strip vlan hdrs */
++			if (insert_remove_vlan_hm(info,
++						pFromSocket->pRtEntry->input_itf->index,
++						pFromSocket->pRtEntry->underlying_input_itf->index))
+ 				break;
+ 		}
+-		// create RTP_PROCESS opcode
++		/* create RTP_PROCESS opcode */
+ 		pFlow->hw_flow->ehash_rtp_relay_params =  info->paramptr;
+ 		if ((htons(pToSocket->Dport)) % 2)
+ 			opcode = PROCESS_RTCP_PAYLOAD;
+ 		else
+ 			opcode = PROCESS_RTP_PAYLOAD;
+ 
+-		DPA_INFO("%s(%d) opcode %x \n",
+-		  __FUNCTION__, __LINE__, opcode);
++		DPA_INFO("%s(%d) opcode %x \n", __FUNCTION__, __LINE__, opcode);
+ 
+ 		if (create_rtprelay_process_opcode(info, pFromSocket->hw_stats, 
+ 							(uint32_t *)pFlow->hw_flow->rtp_info,
+diff --git a/devman.c b/devman.c
+index e94f37f..b751d79 100755
+--- a/devman.c
++++ b/devman.c
+@@ -996,14 +996,14 @@ int dpa_get_out_tx_info_by_itf_id(PRouteEntry rt_entry ,
+         return retval;
+ }
+ 
+-int dpa_get_vlan_iface_stats_entries(struct _itf *input_itf, struct _itf *underlying_input_itf,
++int dpa_get_vlan_iface_stats_entries(uint32_t iif, uint32_t underlying_iif,
+                                         uint8_t *offsets, uint32_t type)
+ {
+         struct dpa_iface_info *iface_info;
+ 
+         iface_info = dpa_interface_info;
+ 	while(iface_info) {
+-		if (iface_info->itf_id  == input_itf->index){
++		if (iface_info->itf_id  == iif){
+ check_parent:
+ 			if (iface_info->if_flags & IF_TYPE_ETHERNET) {
+ #ifdef DEVMAN_DEBUG
+@@ -1045,12 +1045,12 @@ check_parent:
+ 				iface_info = iface_info->pppoe_info.parent;
+ 				goto check_parent;
+ 			}
+- 			if (iface_info->if_flags & IF_TYPE_TUNNEL)
++ 			if ((iface_info->if_flags & IF_TYPE_TUNNEL) && (underlying_iif))
+ 			{
+ #ifdef DEVMAN_DEBUG
+ 				printk("%s::tunnel if\n", __FUNCTION__);
+ #endif
+- 				iface_info = dpa_get_ifinfo_by_itfid(underlying_input_itf->index);
++ 				iface_info = dpa_get_ifinfo_by_itfid(underlying_iif);
+  				if(!iface_info)
+  					return FAILURE;
+   				goto check_parent;	
+@@ -1064,7 +1064,7 @@ check_parent:
+ 	return FAILURE;
+ }
+ 
+-int dpa_get_num_vlan_iface_stats_entries(struct _itf *input_itf, struct _itf *underlying_input_itf,
++int dpa_get_num_vlan_iface_stats_entries(uint32_t iif, uint32_t underlying_iif,
+ 					uint32_t *num_entries)
+ {
+         struct dpa_iface_info *iface_info;
+@@ -1073,7 +1073,7 @@ int dpa_get_num_vlan_iface_stats_entries(struct _itf *input_itf, struct _itf *un
+         iface_info = dpa_interface_info;
+ 	max_stats = 0;
+ 	while(iface_info) {
+-		if (iface_info->itf_id  == input_itf->index) {
++		if (iface_info->itf_id  == iif) {
+ check_parent:
+ 			if (iface_info->if_flags & IF_TYPE_ETHERNET) {
+ 				*num_entries = max_stats;
+@@ -1106,12 +1106,12 @@ check_parent:
+ 				iface_info = iface_info->pppoe_info.parent;
+ 				goto check_parent;
+ 			}
+- 			if (iface_info->if_flags & IF_TYPE_TUNNEL)
++ 			if ( (iface_info->if_flags & IF_TYPE_TUNNEL) && (underlying_iif))
+ 			{
+ #ifdef DEVMAN_DEBUG
+ 				printk("%s::tunnel if\n", __FUNCTION__);
+ #endif
+- 				iface_info = dpa_get_ifinfo_by_itfid(underlying_input_itf->index);
++ 				iface_info = dpa_get_ifinfo_by_itfid(underlying_iif);
+  				if(!iface_info)
+  					return FAILURE;
+   				goto check_parent;	
+@@ -1488,14 +1488,13 @@ int dpa_get_tx_param_by_itf(uint32_t itf_id, uint32_t *fqid, uint8_t *mac_addr)
+         return retval;
+ }
+ 
+-int dpa_get_pppoe_iface_stats_entries(struct _itf *input_itf,
+-			uint8_t *offset, uint8_t type)
++int dpa_get_pppoe_iface_stats_entries(uint32_t itf_id, uint8_t *offset, uint32_t type)
+ {
+         struct dpa_iface_info *iface_info;
+         iface_info = dpa_interface_info;
+ 
+ 	while(iface_info) {
+-		if (iface_info->itf_id  == input_itf->index) {
++		if (iface_info->itf_id  == itf_id) {
+ 			if (iface_info->if_flags & IF_TYPE_PPPOE)
+ 			{
+ 				if (type == TX_IFSTATS) {
+@@ -1520,14 +1519,14 @@ int dpa_get_pppoe_iface_stats_entries(struct _itf *input_itf,
+ 	return FAILURE;
+ }
+ 
+-int dpa_get_tunnel_iface_stats_entries(struct _itf *input_itf,
+-			uint8_t *offset, uint8_t type)
++int dpa_get_tunnel_iface_stats_entries(uint32_t itf_id,
++			uint8_t *offset, uint32_t type)
+ {
+         struct dpa_iface_info *iface_info;
+         iface_info = dpa_interface_info;
+ 
+ 	while(iface_info) {
+-		if (iface_info->itf_id  == input_itf->index) {
++		if (iface_info->itf_id  == itf_id) {
+ 			if (iface_info->if_flags & IF_TYPE_TUNNEL)
+ 			{
+ 				if (type == TX_IFSTATS) {
+@@ -1552,16 +1551,16 @@ int dpa_get_tunnel_iface_stats_entries(struct _itf *input_itf,
+ 	return FAILURE;
+ }
+ 
+-int dpa_get_ether_iface_stats_entries(struct _itf *input_itf,
+-			struct _itf *underlying_input_itf,
+-			uint8_t *offset, uint8_t type)
++int dpa_get_ether_iface_stats_entries(uint32_t iif_index,
++			uint32_t underlying_iif_index,
++			uint8_t *offset, uint32_t type)
+ {
+ 
+         struct dpa_iface_info *iface_info;
+ 
+         iface_info = dpa_interface_info;
+ 	while(iface_info) {
+-		if (iface_info->itf_id == input_itf->index) {
++		if (iface_info->itf_id == iif_index) {
+ check_parent:
+ 			if (iface_info->if_flags & (IF_TYPE_ETHERNET | IF_TYPE_WLAN)) {
+ 				if (type == TX_IFSTATS) {
+@@ -1591,7 +1590,7 @@ check_parent:
+ 			}
+  			if (iface_info->if_flags & IF_TYPE_TUNNEL)
+ 			{
+- 				iface_info = dpa_get_ifinfo_by_itfid(underlying_input_itf->index);
++ 				iface_info = dpa_get_ifinfo_by_itfid(underlying_iif_index);
+  				if(!iface_info)
+  					return FAILURE;
+   				goto check_parent;	
+diff --git a/devman.h b/devman.h
+index 5fe323a..d530112 100644
+--- a/devman.h
++++ b/devman.h
+@@ -5,3 +5,14 @@
+ 
+ int devman_init_linux_stats(void);
+ int devman_deinit_linux_stats(void);
++int dpa_get_num_vlan_iface_stats_entries(uint32_t iif_index,
++			uint32_t underlying_iif_index, uint32_t *num_entries);
++int dpa_get_pppoe_iface_stats_entries(uint32_t itf_id,
++			uint8_t *offset, uint32_t type );
++int dpa_get_tunnel_iface_stats_entries(uint32_t itf_id, uint8_t *offsets, uint32_t type);
++int dpa_get_vlan_iface_stats_entries(uint32_t iif_index, 
++			uint32_t underlying_iif_index,
++                        uint8_t *offsets, uint32_t type);
++int dpa_get_ether_iface_stats_entries(uint32_t iif_index,
++			uint32_t underlying_iif_index,
++			uint8_t *offset, uint32_t type);
+-- 
+2.17.1
+
