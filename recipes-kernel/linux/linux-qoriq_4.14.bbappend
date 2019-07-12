@@ -8,7 +8,7 @@ SRC_URI_append_ls1043avnpevb += " \
 	file://0004-ls1043adcm-disable-autoneg-of-FMAN-IM.patch \
 	file://0005-fman_memac_adjust_link-if-RGMII-ensure-RG-and-IFMODE.patch \
 	file://0006-memac_init_phy-set-adjust_link-callback-even-for-fix.patch \
-	file://0017-updating-the-condition-for-buffer-recycle.patch \
+	file://0017-Allocating-extra-SMP_CACHE_BYTES-and-reserving-in-sk.patch \
 "
 SRC_URI_append_ls1043avnprdb += " \
 	file://0007-net-phy-aquantia-Added-multigig-speeds.patch \

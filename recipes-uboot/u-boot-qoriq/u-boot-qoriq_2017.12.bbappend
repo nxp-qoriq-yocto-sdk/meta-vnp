@@ -48,4 +48,5 @@ SRC_URI_append_ls1043avnprdb += " \
         file://0042-board-fsl-ls1043avnprdb-modify-board-name-to-MPC-LS-.patch \
         file://0043-board-fsl-ls1043avnprdb-print-NAND-as-boot-source.patch \
         file://0044-configs-ls1043avnprdb-Enable-QSPI-programming-from-o.patch \
+        file://0045-configs-ls1043avnprdb-enable-FDT_SEQ_MACADDR_FROM_EN.patch \
 "

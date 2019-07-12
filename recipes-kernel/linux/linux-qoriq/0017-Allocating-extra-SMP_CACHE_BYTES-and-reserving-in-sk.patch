@@ -1,0 +1,101 @@
+From 49b66b8aba914e96632d18e37e82d7cd1dd4f8cf Mon Sep 17 00:00:00 2001
+From: Bhanu Chander G <bhanu.gaddoju@nxp.com>
+Date: Fri, 12 Jul 2019 10:26:25 +0530
+Subject: [PATCH] Allocating extra SMP_CACHE_BYTES and reserving in skb
+
+---
+ .../net/ethernet/freescale/dpaa/dpaa_eth.c    |  2 +-
+ .../ethernet/freescale/sdk_dpaa/dpaa_eth_sg.c | 41 +++++++++++--------
+ 2 files changed, 25 insertions(+), 18 deletions(-)
+
+diff --git a/drivers/net/ethernet/freescale/dpaa/dpaa_eth.c b/drivers/net/ethernet/freescale/dpaa/dpaa_eth.c
+index bb32127b131c..a1c84d08a810 100644
+--- a/drivers/net/ethernet/freescale/dpaa/dpaa_eth.c
++++ b/drivers/net/ethernet/freescale/dpaa/dpaa_eth.c
+@@ -1655,7 +1655,7 @@ static struct sk_buff *dpaa_cleanup_tx_fd(const struct dpaa_priv *priv,
+ 				 qm_sg_entry_get_len(&sgt[0]), dma_dir);
+ 
+ 		/* remaining pages were mapped with skb_frag_dma_map() */
+-		for (i = 1; i < nr_frags; i++) {
++		for (i = 1; i <= nr_frags; i++) {
+ 			WARN_ON(qm_sg_entry_is_ext(&sgt[i]));
+ 
+ 			dma_unmap_page(dev, qm_sg_addr(&sgt[i]),
+diff --git a/drivers/net/ethernet/freescale/sdk_dpaa/dpaa_eth_sg.c b/drivers/net/ethernet/freescale/sdk_dpaa/dpaa_eth_sg.c
+index 841c320cfa4d..f6047a4e92b2 100644
+--- a/drivers/net/ethernet/freescale/sdk_dpaa/dpaa_eth_sg.c
++++ b/drivers/net/ethernet/freescale/sdk_dpaa/dpaa_eth_sg.c
+@@ -108,8 +108,8 @@ static void dpa_bp_recycle_frag(struct dpa_bp *dpa_bp, unsigned long vaddr,
+ 
+ static int _dpa_bp_add_8_bufs(const struct dpa_bp *dpa_bp)
+ {
++	void *new_buf, *fman_buf;
+ 	struct bm_buffer bmb[8];
+-	void *new_buf;
+ 	dma_addr_t addr;
+ 	uint8_t i;
+ 	struct device *dev = dpa_bp->dev;
+@@ -126,7 +126,6 @@ static int _dpa_bp_add_8_bufs(const struct dpa_bp *dpa_bp)
+ 		 * We only need enough space to store a pointer, but allocate
+ 		 * an entire cacheline for performance reasons.
+ 		 */
+-#if 0 //ndef CONFIG_PPC
+ #ifndef CONFIG_PPC
+ 		if (unlikely(dpaa_errata_a010022)) {
+ 			struct page *new_page = alloc_page(GFP_ATOMIC);
+@@ -140,29 +139,37 @@ static int _dpa_bp_add_8_bufs(const struct dpa_bp *dpa_bp)
+ 
+ 		if (unlikely(!new_buf))
+ 			goto netdev_alloc_failed;
+-		new_buf = PTR_ALIGN(new_buf + SMP_CACHE_BYTES, SMP_CACHE_BYTES);
+-#else
+-#define DPA_ETH_BPOOL_ALIGN     2048
+-#define DPA_BPOOL_SIZE          DPA_ETH_BPOOL_ALIGN
+-                new_buf = netdev_alloc_frag(DPA_ETH_BPOOL_ALIGN + DPA_BPOOL_SIZE);
+-		if (unlikely(!new_buf))
+-			goto netdev_alloc_failed;
+-                new_buf = PTR_ALIGN(new_buf + DPA_ETH_BPOOL_ALIGN, DPA_ETH_BPOOL_ALIGN);
++		new_buf = PTR_ALIGN(new_buf, SMP_CACHE_BYTES);
+ 
+-#endif //0
+-		skb = build_skb(new_buf, DPA_SKB_SIZE(dpa_bp->size) +
+-			SKB_DATA_ALIGN(sizeof(struct skb_shared_info)));
++		/* Apart from the buffer that will be used by the FMan, the
++		 * skb also guarantees enough space to hold the backpointer
++		 * in the headroom and the shared info at the end.
++		 */
++		skb = build_skb(new_buf,
++				SMP_CACHE_BYTES + DPA_SKB_SIZE(dpa_bp->size) +
++				SKB_DATA_ALIGN(sizeof(struct skb_shared_info)));
+ 		if (unlikely(!skb)) {
+ 			put_page(virt_to_head_page(new_buf));
+ 			goto build_skb_failed;
+ 		}
+ 
+-		/* Store the skb back-pointer before the start of the buffer.
+-		 * Otherwise it will be overwritten by the FMan.
++		/* Reserve SMP_CACHE_BYTES in the skb's headroom to store the
++		 * backpointer. This area will not be synced to, or
++		 * overwritten by, the FMan.
++		 */
++		skb_reserve(skb, SMP_CACHE_BYTES);
++
++		/* We don't sync the first SMP_CACHE_BYTES of the buffer to
++		 * the FMan. The skb backpointer is stored at the end of the
++		 * reserved headroom. Otherwise it will be overwritten by the
++		 * FMan.
++		 * The buffer synced with the FMan starts right after the
++		 * reserved headroom.
+ 		 */
+-		DPA_WRITE_SKB_PTR(skb, skbh, new_buf, -1);
++		fman_buf = new_buf + SMP_CACHE_BYTES;
++		DPA_WRITE_SKB_PTR(skb, skbh, fman_buf, -1);
+ 
+-		addr = dma_map_single(dev, new_buf,
++		addr = dma_map_single(dev, fman_buf,
+ 				dpa_bp->size, DMA_BIDIRECTIONAL);
+ 		if (unlikely(dma_mapping_error(dev, addr)))
+ 			goto dma_map_failed;
+-- 
+2.17.1
+
