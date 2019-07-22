@@ -45,6 +45,7 @@ RDEPENDS_${PN} = " \
     azure-iot-sdk-c \
     aws-cloudlogger \
     azure-cloudlogger \
+    sqlite3 \
 "
 
 RDEPENDS_${PN}-server = " \
