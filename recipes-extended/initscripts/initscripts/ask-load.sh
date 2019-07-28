@@ -11,12 +11,12 @@
 PATH="/sbin:/bin:/usr/sbin:/usr/bin"
 
 echo "Loading ASK specific kernel modules... "
-insmod /lib/modules/4.14.16+gdfe1b1320d85/extra/auto_bridge.ko
-insmod /lib/modules/4.14.16+gdfe1b1320d85/extra/cdx.ko
-insmod /lib/modules/4.14.16+gdfe1b1320d85/extra/fci.ko
-insmod /lib/modules/4.14.16+gdfe1b1320d85/kernel/net/rfkill/rfkill.ko
-insmod /lib/modules/4.14.16+gdfe1b1320d85/kernel/net/wireless/cfg80211.ko
-insmod /lib/modules/4.14.16+gdfe1b1320d85/extra/rtl8812au.ko
+insmod /lib/modules/$(uname -r)/extra/auto_bridge.ko
+insmod /lib/modules/$(uname -r)/extra/cdx.ko
+insmod /lib/modules/$(uname -r)/extra/fci.ko
+insmod /lib/modules/$(uname -r)/kernel/net/rfkill/rfkill.ko
+insmod /lib/modules/$(uname -r)/kernel/net/wireless/cfg80211.ko
+insmod /lib/modules/$(uname -r)/extra/rtl8812au.ko
 
 echo "Enabling ipv4 forwarding... "
 echo 1 > /proc/sys/net/ipv4/ip_forward
